@@ -1,0 +1,54 @@
+# Supply collection source definitions.
+# Each competitor's regions are iterated by collect_supply.py.
+#
+# Fields per region:
+#   label            — human-readable label for logging / Chat summary
+#   url              — page to load with Playwright
+#   source           — written to raw_supply_snapshots.source column
+#   metric_name      — metric being measured
+#   collection_method — describes how the count is obtained (affects reliability)
+#   confidence       — high | medium | low
+
+supply_sources:
+  airbnb:
+    display_name: Airbnb (via AirDNA)
+    collector: airbnb
+    regions:
+      seoul:
+        label: Seoul
+        url: "https://app.airdna.co/data/kr/45/listings?lat=37.564679&lng=126.97451&zoom=11.08"
+        source: airdna
+        metric_name: active_listings
+        collection_method: airdna_dashboard
+        confidence: high
+
+  liveanywhere:
+    display_name: LiveAnywhere
+    collector: liveanywhere
+    regions:
+      nationwide:
+        label: nationwide
+        url: "https://www.liveanywhere.me/accommodations/search-result?view-category-id=1&reservation-period=ONE_WEEK&adult-count=1&child-count=0&infant-count=0&pet-count=0&is-date-selected=false&entry-point=srp"
+        source: liveanywhere_web
+        metric_name: listing_count
+        collection_method: search_result_count
+        confidence: high
+      seoul:
+        label: Seoul
+        url: "https://www.liveanywhere.me/accommodations/search-result?place-id=1729&reservation-period=ONE_WEEK&adult-count=1&child-count=0&infant-count=0&pet-count=0&is-date-selected=false&entry-point=srp"
+        source: liveanywhere_web
+        metric_name: listing_count
+        collection_method: search_result_count
+        confidence: high
+
+  encostay:
+    display_name: Encostay
+    collector: encostay
+    regions:
+      nationwide:
+        label: nationwide
+        url: "https://stay.enko.kr/ko/map-search?guestNum=1&zoom=8&center=%257B%2522lat%2522%253A36.06016656884339%252C%2522lng%2522%253A127.08166603888644%257D"
+        source: encostay_web
+        metric_name: house_count
+        collection_method: map_view_estimate
+        confidence: medium

@@ -1,0 +1,302 @@
+# Google Sheets tab and column definitions.
+# Column order here must match the row order written by each job.
+#
+# ACTIVE TABS (written by current jobs):
+#   meta_ad_start_dates — one row per Meta ad per daily run (library_id + start date)
+#   raw_supply_snapshots — supply/house counts (AirDNA, LiveAnywhere, Encostay)
+#   policy_updates      — one row per notice board check
+#   run_log             — one row per daily run
+#
+# NO LONGER WRITTEN (preserved in Sheets for historical data):
+#   daily_ad_counts  — superseded by meta_ad_start_dates
+#   ad_creatives     — superseded by meta_ad_start_dates
+#
+# LEGACY TABS (preserved in Sheets for historical data; no longer written):
+#   ad_activity_snapshots, policy_change_log, viral_reputation_mentions, alert_log
+
+spreadsheet:
+  daily_ad_counts:
+    columns:
+      - name: date
+        type: date
+        description: 수집 날짜 (YYYY-MM-DD)
+      - name: collected_at
+        type: datetime
+        description: 수집 UTC 타임스탬프
+      - name: competitor
+        type: string
+        description: 경쟁사 키 (airbnb | liveanywhere | encostay)
+      - name: meta_active_ads_count
+        type: integer
+        description: Meta Ad Library 활성 광고 수
+      - name: google_total_ads_count
+        type: integer
+        description: Google Ads Transparency 전체 광고 수
+      - name: google_date_range
+        type: string
+        description: Google 광고 날짜 범위 필터 (기본값 공백)
+      - name: google_maps_count
+        type: integer
+        description: Google Maps 광고 수
+      - name: google_play_count
+        type: integer
+        description: Google Play 광고 수
+      - name: google_shopping_count
+        type: integer
+        description: Google Shopping 광고 수
+      - name: google_search_count
+        type: integer
+        description: Google Search 광고 수
+      - name: youtube_count
+        type: integer
+        description: YouTube 광고 수
+      - name: meta_status
+        type: string
+        description: Meta 수집 상태 (ok | partial | failed)
+      - name: google_status
+        type: string
+        description: Google 수집 상태 (ok | date_filter_failed | advertiser_not_found | no_ads_today | count_not_found | failed)
+      - name: error_message
+        type: string
+        description: 오류 메시지 (복수 오류는 | 구분)
+      - name: meta_source_url
+        type: string
+        description: Meta Ad Library 수집 URL
+      - name: google_source_url
+        type: string
+        description: Google Ads Transparency 광고주 페이지 URL
+      - name: google_selected_advertiser_name
+        type: string
+        description: Google Ads TC에서 선택된 광고주명
+
+  ad_creatives:
+    columns:
+      - name: date
+        type: date
+        description: 수집 날짜
+      - name: collected_at
+        type: datetime
+        description: 수집 UTC 타임스탬프
+      - name: competitor
+        type: string
+        description: 경쟁사 키
+      - name: source
+        type: string
+        description: 수집 소스 (meta_ad_library | google_ads_transparency)
+      - name: platform
+        type: string
+        description: 광고 게재 플랫폼 (meta | google_search | youtube 등)
+      - name: advertiser_name
+        type: string
+        description: 광고주명 (Ad Library에 표시된 이름)
+      - name: library_id
+        type: string
+        description: "Meta Ad Library에 표시된 라이브러리 ID (예: 829771526364673)"
+      - name: ad_detail_url
+        type: string
+        description: 광고 상세 URL (https://www.facebook.com/ads/library/?id=<library_id>)
+      - name: ad_start_date
+        type: date
+        description: 광고 게재 시작일 (YYYY-MM-DD, 페이지에서 추출)
+      - name: started_running_text
+        type: string
+        description: "광고 시작일 원문 텍스트 (예: 2026. 5. 7.에 게재 시작함)"
+      - name: platforms
+        type: string
+        description: 광고 게재 플랫폼 목록 (카드에서 추출)
+      - name: creative_text
+        type: string
+        description: 광고 소재 텍스트 최대 500자 (UI/내비게이션 텍스트 제외)
+      - name: landing_url
+        type: string
+        description: 광고 랜딩 URL (노출된 경우)
+      - name: creative_type
+        type: string
+        description: 소재 유형 (image | video | carousel | text | unknown)
+      - name: creative_hash
+        type: string
+        description: 소재 텍스트 SHA-256 앞 16자 (중복 감지용)
+      - name: source_url
+        type: string
+        description: 수집 페이지 URL
+      - name: status
+        type: string
+        description: 수집 상태 (ok | partial | failed)
+      - name: error_message
+        type: string
+        description: 오류 메시지
+
+  policy_updates:
+    columns:
+      - name: date
+        type: date
+        description: 확인 날짜
+      - name: checked_at
+        type: datetime
+        description: 확인 UTC 타임스탬프
+      - name: competitor
+        type: string
+        description: 경쟁사 키
+      - name: source_page
+        type: string
+        description: 공지사항 페이지 키 (policy_pages.yaml의 key)
+      - name: latest_title
+        type: string
+        description: 가장 최근 게시물 제목
+      - name: latest_url
+        type: string
+        description: 가장 최근 게시물 URL
+      - name: latest_published_at
+        type: string
+        description: 가장 최근 게시물 게재일 (페이지에서 추출 시)
+      - name: is_new
+        type: boolean
+        description: 새 게시물 여부 (최근 URL이 이전과 다를 때 True)
+      - name: is_changed
+        type: boolean
+        description: 최근 게시물 변경 여부 (제목은 바뀌었으나 URL은 동일할 때 True)
+      - name: summary_ko
+        type: string
+        description: 한국어 요약
+      - name: raw_text
+        type: string
+        description: 페이지 원문 텍스트 최대 1000자
+      - name: image_text_ocr
+        type: string
+        description: 이미지 OCR 텍스트 (미구현 시 빈칸)
+      - name: image_url
+        type: string
+        description: 이미지 게시물의 이미지 URL
+      - name: status
+        type: string
+        description: 수집 상태 (ok | failed | image_needs_review)
+      - name: error_message
+        type: string
+        description: 오류 메시지
+
+  raw_supply_snapshots:
+    columns:
+      - name: date
+        type: date
+        description: 수집 날짜 (YYYY-MM-DD)
+      - name: collected_at
+        type: datetime
+        description: 수집 UTC 타임스탬프
+      - name: competitor
+        type: string
+        description: 경쟁사 키 (airbnb | liveanywhere | encostay)
+      - name: source
+        type: string
+        description: 수집 소스 (airdna | liveanywhere_web | encostay_web)
+      - name: region
+        type: string
+        description: 지역 키 (seoul | nationwide 등)
+      - name: metric_name
+        type: string
+        description: 지표명 (active_listings | listing_count | house_count)
+      - name: count
+        type: integer
+        description: 수집된 매물/리스팅 수
+      - name: raw_count_text
+        type: string
+        description: 페이지에서 매칭된 원문 텍스트
+      - name: collection_method
+        type: string
+        description: 수집 방법 (airdna_dashboard | search_result_count | map_view_estimate)
+      - name: confidence
+        type: string
+        description: 신뢰도 (high | medium | low)
+      - name: source_url
+        type: string
+        description: 수집 URL
+      - name: status
+        type: string
+        description: 수집 상태 (ok | login_required | count_not_found | failed)
+      - name: error_message
+        type: string
+        description: 오류 메시지
+
+  run_log:
+    columns:
+      - name: run_started_at
+        type: datetime
+        description: 실행 시작 UTC 타임스탬프
+      - name: run_finished_at
+        type: datetime
+        description: 실행 완료 UTC 타임스탬프
+      - name: meta_checked_count
+        type: integer
+        description: Meta 수집 완료 경쟁사 수
+      - name: google_checked_count
+        type: integer
+        description: Google 수집 완료 경쟁사 수
+      - name: policy_checked_count
+        type: integer
+        description: 정책 페이지 확인 수
+      - name: new_policy_count
+        type: integer
+        description: 새 게시물 발견 수
+      - name: changed_policy_count
+        type: integer
+        description: 변경 감지 수
+      - name: failed_count
+        type: integer
+        description: 실패 수 (전체 워크플로우 합산)
+      - name: summary_ko
+        type: string
+        description: 한국어 실행 요약
+      - name: status
+        type: string
+        description: 전체 실행 상태 (ok | partial | failed)
+
+  meta_ad_start_dates:
+    columns:
+      - name: date
+        type: date
+        description: 수집 날짜 (YYYY-MM-DD)
+      - name: collected_at
+        type: datetime
+        description: 수집 UTC 타임스탬프
+      - name: competitor
+        type: string
+        description: 경쟁사 키 (airbnb | liveanywhere | encostay)
+      - name: advertiser_name
+        type: string
+        description: 광고주명 (카드에서 추출 또는 설정값)
+      - name: library_id
+        type: string
+        description: "Meta Ad Library에 표시된 라이브러리 ID (예: 1232953615382668)"
+      - name: ad_detail_url
+        type: string
+        description: 광고 상세 URL (https://www.facebook.com/ads/library/?id=<library_id>)
+      - name: started_running_text
+        type: string
+        description: "광고 시작일 원문 텍스트 (예: 2026. 5. 7.에 게재 시작함)"
+      - name: ad_start_date
+        type: date
+        description: 광고 게재 시작일 (YYYY-MM-DD)
+      - name: creative_text
+        type: string
+        description: 광고 소재 텍스트 최대 500자
+      - name: landing_url
+        type: string
+        description: 광고 랜딩 URL
+      - name: source_url
+        type: string
+        description: Meta Ad Library 수집 URL (경쟁사별 고정 URL)
+      - name: status
+        type: string
+        description: 수집 상태 (ok | missing_fields | failed)
+      - name: error_message
+        type: string
+        description: 오류 또는 누락 필드 메시지
+
+legacy:
+  # 아래 탭은 더 이상 어떤 Job도 기록하지 않습니다.
+  # Google Sheets의 탭은 과거 데이터 보존을 위해 유지합니다.
+  daily_ad_counts: {}
+  ad_creatives: {}
+  ad_activity_snapshots: {}
+  policy_change_log: {}
+  viral_reputation_mentions: {}
+  alert_log: {}

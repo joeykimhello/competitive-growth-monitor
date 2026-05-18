@@ -1,0 +1,60 @@
+# Notice board pages to monitor for new posts.
+# These are list-style pages (news feeds, notice boards, help center categories).
+# The detector fetches each URL, extracts the latest post, and detects changes.
+#
+# type:
+#   news_list    — WordPress/Ghost-style blog post list
+#   notice_list  — Korean-style notice board
+#   zendesk      — Zendesk Help Center category page
+#
+# may_have_image_posts: true when the page may publish content as images
+#   → stores image_url and sets status=image_needs_review instead of parsing text
+
+policy_pages:
+  airbnb:
+    - key: public_policy
+      url: https://news.airbnb.com/ko/category/public-policy/
+      label: Airbnb 공개 정책
+      type: news_list
+      competitor_display: Airbnb
+
+  liveanywhere:
+    - key: host_notice
+      url: https://host.liveanywhere.me/notice/?category=
+      label: 리브애니웨어 호스트 공지사항
+      type: notice_list
+      competitor_display: 리브애니웨어
+      may_have_image_posts: true
+      js_rendered: true
+
+  encostay:
+    - key: host_notice
+      url: https://host-support.enko.kr/hc/ko-kr/categories/14704971475727-%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD
+      label: 엔코스테이 공지사항
+      type: zendesk
+      competitor_display: 엔코스테이
+      js_rendered: true
+
+  mister_mention:
+    - key: policy_help
+      url: https://www.mrmention.co.kr/help/2
+      label: 미스터멘션 정책 안내
+      type: mrmention_policy
+      competitor_display: 미스터멘션
+      js_rendered: true
+
+  zigbang:
+    - key: notice
+      url: https://www.zigbang.com/event/notice
+      label: 직방 공지사항
+      type: notice_list
+      competitor_display: 직방
+      js_rendered: true
+
+  33m2:
+    - key: notice
+      url: https://web.33m2.co.kr/guest/notice
+      label: 삼삼엠투 공지사항
+      type: notice_list
+      competitor_display: 삼삼엠투
+      js_rendered: true

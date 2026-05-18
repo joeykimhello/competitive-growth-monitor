@@ -1,0 +1,13 @@
+.env
+*.json
+!package.json
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.DS_Store
+data/
+.auth/
+.secrets/
+.playwright-mcp/

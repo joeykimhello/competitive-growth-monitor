@@ -1,0 +1,55 @@
+# Ad data source configurations for collect_ads.py.
+# Each source defines how to navigate and extract ad information.
+# Keywords are used to refine searches where the source supports it.
+# URL templates use {advertiser} placeholder from competitors.yaml.
+#
+# NOTE: google_ads_transparency competitor_keywords are reference-only.
+#       Live code reads google_ads_transparency_advertiser /
+#       google_ads_transparency_search_terms from competitors.yaml.
+
+sources:
+  meta_ad_library:
+    display_name: Meta Ad Library
+    base_url: "https://www.facebook.com/ads/library/"
+    source_platform: meta
+    source_tool: meta_ad_library
+    confidence: medium
+    # URL is taken directly from competitors.yaml meta_ad_library_url
+    wait_for_selector: "[data-testid='ad-library-search-results'], ._7jyr, .x1lliihq"
+    ad_card_selector: "._7jyr, [data-testid='ad-library-ad-card']"
+    max_ads: 30
+    page_load_timeout_ms: 30000
+    # Per-competitor search keywords (English first, Korean second)
+    competitor_keywords:
+      airbnb:
+        en: ["Airbnb", "에어비앤비"]
+        ko: ["에어비앤비", "Airbnb"]
+      liveanywhere:
+        en: ["LiveAnywhere", "라이브애니웨어"]
+        ko: ["라이브애니웨어", "LiveAnywhere"]
+      encostay:
+        en: ["Encostay", "엔코스테이"]
+        ko: ["엔코스테이", "Encostay"]
+
+  google_ads_transparency:
+    display_name: Google Ads Transparency Center
+    base_url: "https://adstransparency.google.com/"
+    source_platform: google
+    source_tool: google_ads_transparency
+    confidence: medium
+    region: KR
+    wait_for_selector: "creative-preview, .creative-preview, [data-creative-id]"
+    ad_card_selector: "creative-preview, [data-creative-id]"
+    max_ads: 30
+    page_load_timeout_ms: 30000
+    # Actual Google Ads Transparency advertiser names (verified manually 2026-05-11)
+    competitor_keywords:
+      airbnb:
+        preferred_advertiser_name: Airbnb
+        search_terms: ["Airbnb"]
+      liveanywhere:
+        preferred_advertiser_name: 주식회사 리브애니웨어
+        search_terms: ["주식회사 리브애니웨어", "리브애니웨어", "LiveAnywhere", "liveanywhere.me"]
+      encostay:
+        preferred_advertiser_name: 엔코위더스
+        search_terms: ["엔코위더스", "엔코스테이", "Encostay", "enko", "stay.enko.kr"]

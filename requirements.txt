@@ -1,0 +1,31 @@
+# Google Sheets
+google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+google-api-python-client==2.126.0
+
+# HTTP / scraping
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.2.1
+
+# Browser automation (ad library collectors)
+playwright==1.44.0
+
+# Diff / hashing
+deepdiff==7.0.1
+
+# Config / env
+python-dotenv==1.0.1
+pyyaml==6.0.1
+
+# API server (Cloud Run / n8n Cloud integration)
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# CLI utilities
+click==8.1.7
+
+# Testing
+pytest==8.2.0
+pytest-mock==3.14.0
+responses==0.25.3

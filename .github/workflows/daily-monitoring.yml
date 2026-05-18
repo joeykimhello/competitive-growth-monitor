@@ -1,0 +1,49 @@
+name: Daily Monitoring
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 09:00 KST (UTC+9)
+  workflow_dispatch:        # 수동 실행 허용
+
+jobs:
+  run-daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: python -m playwright install chromium --with-deps
+
+      - name: Create required directories
+        run: |
+          mkdir -p .auth .secrets \
+            data/snapshots/supply \
+            data/snapshots/ads \
+            data/snapshots/policy
+
+      - name: Restore Google service account
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > .secrets/google_service_account.json
+
+      - name: Restore AirDNA session
+        run: echo '${{ secrets.AIRDNA_STORAGE_STATE_JSON }}' > .auth/airdna_state.json
+
+      - name: Run daily monitoring
+        env:
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CHAT_WEBHOOK_URL: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+          GOOGLE_APPLICATION_CREDENTIALS: .secrets/google_service_account.json
+        run: |
+          # Skip venv activation — GitHub Actions runner uses the global Python
+          python -m src.jobs.run_daily

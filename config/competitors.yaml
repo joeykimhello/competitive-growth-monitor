@@ -1,0 +1,65 @@
+# Competitor definitions for competitive-growth-monitor.
+# 33m2 is our own service — it is intentionally excluded from this file.
+#
+# Ad monitoring sources (MVP):
+#   meta_ad_library_url                        — direct search URL on Meta Ad Library
+#   google_ads_transparency_advertiser         — preferred advertiser name (exact match target)
+#   google_ads_transparency_search_terms       — ordered list of search terms to try;
+#                                                first match that reaches a gallery page wins
+
+competitors:
+  airbnb:
+    display_name: Airbnb
+    base_url: https://www.airbnb.com
+    search_url_template: "https://www.airbnb.com/s/{market}/homes"
+    meta_ad_library_url: "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=KR&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&view_all_page_id=324826532457"
+    google_ads_transparency_advertiser: Airbnb, Inc.
+    google_ads_transparency_search_terms:
+      - Airbnb, Inc.
+      - Airbnb
+    markets:
+      - slug: Seoul--South-Korea
+        label: Seoul
+      - slug: Busan--South-Korea
+        label: Busan
+      - slug: Jeju-Island--South-Korea
+        label: Jeju
+      - slug: Tokyo--Japan
+        label: Tokyo
+      - slug: Singapore--Singapore
+        label: Singapore
+
+  liveanywhere:
+    display_name: LiveAnywhere
+    base_url: https://liveanywhere.com
+    search_url_template: "https://liveanywhere.com/search?location={market}"
+    meta_ad_library_url: "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=KR&is_targeted_country=false&media_type=all&search_type=page&sort_data[direction]=desc&sort_data[mode]=total_impressions&view_all_page_id=352761898712591"
+    google_ads_transparency_advertiser: 주식회사 리브애니웨어
+    google_ads_transparency_search_terms:
+      - 주식회사 리브애니웨어
+      - 리브애니웨어
+      - LiveAnywhere
+      - liveanywhere.me
+    markets:
+      - slug: seoul
+        label: Seoul
+      - slug: busan
+        label: Busan
+
+  encostay:
+    display_name: Encostay
+    base_url: https://encostay.com
+    search_url_template: "https://encostay.com/search?location={market}"
+    meta_ad_library_url: "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=KR&is_targeted_country=false&media_type=all&search_type=page&sort_data[direction]=desc&sort_data[mode]=total_impressions&view_all_page_id=108631594606079"
+    google_ads_transparency_advertiser: 엔코위더스
+    google_ads_transparency_search_terms:
+      - 엔코위더스
+      - 엔코스테이
+      - Encostay
+      - enko
+      - stay.enko.kr
+    markets:
+      - slug: seoul
+        label: Seoul
+      - slug: jeju
+        label: Jeju

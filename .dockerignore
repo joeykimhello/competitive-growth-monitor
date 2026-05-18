@@ -1,0 +1,33 @@
+# --- Secrets and credentials (must never enter the image) ---
+.env
+*.json
+
+# --- Python runtime artifacts ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# --- Virtual environment ---
+.venv/
+venv/
+env/
+
+# --- Local data and snapshots (ephemeral; not part of the image) ---
+data/
+
+# --- Development and tooling artifacts ---
+.git/
+.gitignore
+.DS_Store
+.claude/
+.playwright-mcp/
+
+# --- Documentation and tests (not needed at runtime) ---
+docs/
+tests/
+*.md
