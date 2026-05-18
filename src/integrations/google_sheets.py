@@ -8,6 +8,7 @@ Column order for each tab is driven by config/sheet_schema.yaml so callers
 pass a plain dict and never need to know the positional order themselves.
 """
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -26,6 +27,8 @@ _SCHEMA_PATH = Path(__file__).parents[2] / "config" / "sheet_schema.yaml"
 
 # Module-level cache so the YAML file is only read once per process.
 _schema_cache: Optional[dict] = None
+# Print credential diagnostics only once per process.
+_creds_logged = False
 
 
 def _load_schema() -> dict:
@@ -47,8 +50,32 @@ def _column_names(sheet_name: str) -> list[str]:
     return [col["name"] for col in schema[sheet_name]["columns"]]
 
 
+def _log_credential_info(creds_path: str) -> None:
+    """Print credential file diagnostics for CI log. Never prints private_key content."""
+    p = Path(creds_path)
+    exists = p.exists()
+    print(f"[google_sheets] GOOGLE_APPLICATION_CREDENTIALS={creds_path!r} exists={exists}")
+    if not exists:
+        print("[google_sheets] Credentials file NOT FOUND — all sheet operations will fail", file=sys.stderr)
+        return
+    size = p.stat().st_size
+    print(f"[google_sheets] Credentials file size: {size} bytes")
+    try:
+        data = json.loads(p.read_text())
+        email = data.get("client_email", "(missing)")
+        project = data.get("project_id", "(missing)")
+        print(f"[google_sheets] Service account email: {email}")
+        print(f"[google_sheets] Project ID: {project}")
+    except Exception as exc:
+        print(f"[google_sheets] Could not parse credentials JSON: {exc}", file=sys.stderr)
+
+
 def _get_service():
+    global _creds_logged
     creds_path = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+    if not _creds_logged:
+        _log_credential_info(creds_path)
+        _creds_logged = True
     credentials = service_account.Credentials.from_service_account_file(
         creds_path,
         scopes=_SCOPES,
@@ -110,6 +137,7 @@ def append_row(sheet_name: str, row: dict) -> bool:
             insertDataOption="INSERT_ROWS",
             body={"values": [values]},
         ).execute()
+        print(f"[google_sheets] append_row OK → tab='{sheet_name}'")
         return True
     except FileNotFoundError as exc:
         print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
@@ -118,7 +146,7 @@ def append_row(sheet_name: str, row: dict) -> bool:
         print(f"[google_sheets] Sheets API error {exc.status_code}: {exc.reason}", file=sys.stderr)
         return False
     except Exception as exc:
-        print(f"[google_sheets] Unexpected error: {exc}", file=sys.stderr)
+        print(f"[google_sheets] Unexpected error in append_row: {type(exc).__name__}: {exc}", file=sys.stderr)
         return False
 
 
@@ -332,6 +360,41 @@ def color_cell_yellow(sheet_name: str, row_1indexed: int, col_0indexed: int) -> 
         col_0indexed:  0-based column index (A=0, B=1, …).
     """
     return _set_cell_background(sheet_name, row_1indexed, col_0indexed, 1.0, 1.0, 0.0)
+
+
+def read_sheet_rows(tab_name: str) -> list[dict]:
+    """Read all data rows from a tab and return as list of header-keyed dicts.
+
+    The first row is treated as the header. Returns [] on error or empty tab.
+    """
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    if not sheet_id or not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        return []
+    try:
+        service = _get_service()
+        result = (
+            service.spreadsheets()
+            .values()
+            .get(spreadsheetId=sheet_id, range=f"{tab_name}!A:Z")
+            .execute()
+        )
+        rows = result.get("values", [])
+        if len(rows) < 2:
+            return []
+        header = rows[0]
+        return [
+            {header[i]: (row[i] if i < len(row) else "") for i in range(len(header))}
+            for row in rows[1:]
+        ]
+    except HttpError as exc:
+        print(
+            f"[google_sheets] read_sheet_rows API error {exc.status_code}: {exc.reason}",
+            file=sys.stderr,
+        )
+        return []
+    except Exception as exc:
+        print(f"[google_sheets] read_sheet_rows error: {exc}", file=sys.stderr)
+        return []
 
 
 def read_last_row(tab: str) -> Optional[list[Any]]:

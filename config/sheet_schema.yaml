@@ -291,6 +291,18 @@ spreadsheet:
         type: string
         description: 오류 또는 누락 필드 메시지
 
+  meta_ad_counts:
+    columns:
+      - name: date
+        type: date
+        description: 수집 날짜 (YYYY-MM-DD)
+      - name: competitor
+        type: string
+        description: 경쟁사 키 (airbnb | liveanywhere | encostay | zaristay | zigbang | mister_mention | 33m2_1 | 33m2_2)
+      - name: displayed_meta_count
+        type: integer
+        description: Meta Ad Library 화면 표시 광고 수 (결과 ~N개 헤더에서 추출)
+
 legacy:
   # 아래 탭은 더 이상 어떤 Job도 기록하지 않습니다.
   # Google Sheets의 탭은 과거 데이터 보존을 위해 유지합니다.

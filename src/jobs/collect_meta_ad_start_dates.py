@@ -42,6 +42,7 @@ from dotenv import load_dotenv
 
 from src.collectors.ads import meta_ad_library
 from src.integrations.google_sheets import (
+    append_row,
     append_row_get_index,
     clear_cell_background,
     color_cell_yellow,
@@ -124,8 +125,8 @@ _COMPETITORS = {
             "&view_all_page_id=134701860224780"
         ),
     },
-    "33m2": {
-        "display_name": "삼삼엠투",
+    "33m2_1": {
+        "display_name": "삼삼엠투1",
         "advertiser_name": "삼삼엠투",
         "url": (
             "https://www.facebook.com/ads/library/"
@@ -133,6 +134,17 @@ _COMPETITORS = {
             "&is_targeted_country=false&media_type=all&search_type=page"
             "&sort_data[direction]=desc&sort_data[mode]=total_impressions"
             "&view_all_page_id=532282707266733"
+        ),
+    },
+    "33m2_2": {
+        "display_name": "삼삼엠투2",
+        "advertiser_name": "삼삼엠투",
+        "url": (
+            "https://www.facebook.com/ads/library/"
+            "?active_status=active&ad_type=all&country=KR"
+            "&is_targeted_country=false&media_type=all&search_type=page"
+            "&sort_data[direction]=desc&sort_data[mode]=total_impressions"
+            "&view_all_page_id=936539016218927"
         ),
     },
 }
@@ -211,6 +223,7 @@ def run() -> dict:
     collected_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     ensure_headers(_TAB)
+    ensure_headers("meta_ad_counts")
 
     total_written = 0
     total_failed = 0
@@ -250,6 +263,7 @@ def run() -> dict:
         seen_library_ids: set[str] = set()
         written = 0
         dupes = 0
+        long_running_count = 0
 
         for creative in creatives:
             library_id = creative.get("library_id", "")
@@ -300,6 +314,9 @@ def run() -> dict:
             collection_date = row.get("date") or today
             highlight, threshold_str = _should_highlight(ad_start_date, collection_date)
 
+            if highlight:
+                long_running_count += 1
+
             if debug_rows_logged < 10:
                 print(
                     f"  [HIGHLIGHT_DEBUG] collection_date={collection_date}"
@@ -325,13 +342,15 @@ def run() -> dict:
                 )
 
         print(
-            f"  [META_DATES] {display_name}: {written} rows written, {dupes} dupes skipped"
+            f"  [META_DATES] {display_name}: {written} rows written, {dupes} dupes skipped,"
+            f" long_running={long_running_count}"
         )
         print(
             f"  [META_COUNT_DEBUG] competitor={competitor_key}"
             f" raw={displayed_count_raw!r}"
             f" displayed_meta_count={displayed_meta_count}"
             f" written={written}"
+            f" long_running_count={long_running_count}"
         )
         total_written += written
         results.append({
@@ -341,6 +360,12 @@ def run() -> dict:
             "written": written,
             "dupes": dupes,
             "displayed_meta_count": displayed_meta_count,
+            "long_running_count": long_running_count,
+        })
+        append_row("meta_ad_counts", {
+            "date": today,
+            "competitor": competitor_key,
+            "displayed_meta_count": displayed_meta_count if displayed_meta_count is not None else "",
         })
 
     print(

@@ -21,12 +21,12 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 from src.jobs import collect_meta_ad_start_dates, collect_supply, detect_policy_changes
-from src.integrations.google_sheets import append_row, ensure_headers
+from src.integrations.google_sheets import append_row, ensure_headers, read_sheet_rows
 from src.integrations.google_chat import send_google_chat_message
 
 load_dotenv()
 
-# Fixed display order for [Meta 광고] — 7 competitors
+# Fixed display order for [Meta 광고] — 8 competitors
 _META_ORDER = [
     ("airbnb",         "Airbnb"),
     ("liveanywhere",   "LiveAnywhere"),
@@ -34,7 +34,8 @@ _META_ORDER = [
     ("zaristay",       "자리톡"),
     ("zigbang",        "직방"),
     ("mister_mention", "미스터멘션"),
-    ("33m2",           "삼삼엠투"),
+    ("33m2_1",         "삼삼엠투1"),
+    ("33m2_2",         "삼삼엠투2"),
 ]
 
 # Fixed display order for [정책/공지] — 6 competitors (자리톡 제외)
@@ -57,11 +58,38 @@ _SUPPLY_DISPLAY = {
 _SUPPLY_ORDER = ["Airbnb", "리브애니웨어", "엔코스테이"]
 
 
+def _get_previous_meta_counts(today: str) -> dict:
+    """Return {competitor_key: displayed_meta_count} for the most recent date < today.
+
+    Reads the meta_ad_counts sheet tab. If the tab is empty or unreadable, returns {}.
+    """
+    rows = read_sheet_rows("meta_ad_counts")
+    # Collect (date, count) per competitor, keeping only dates strictly before today
+    by_comp: dict[str, list[tuple[str, int]]] = {}
+    for row in rows:
+        d = row.get("date", "")
+        comp = row.get("competitor", "")
+        cnt_str = row.get("displayed_meta_count", "")
+        if not d or not comp or not cnt_str or d >= today:
+            continue
+        try:
+            by_comp.setdefault(comp, []).append((d, int(cnt_str)))
+        except (ValueError, TypeError):
+            continue
+    # For each competitor pick the count from the most recent previous date
+    result = {}
+    for comp, entries in by_comp.items():
+        entries.sort(key=lambda x: x[0], reverse=True)
+        result[comp] = entries[0][1]
+    return result
+
+
 def _build_summary(
     date: str,
     meta_ad_stats: dict,
     supply_stats: dict,
     policy_stats: dict,
+    prev_meta_counts: dict,
 ) -> str:
     lines = [
         f"*경쟁사 모니터링 일일 리포트* ({date})",
@@ -77,13 +105,42 @@ def _build_summary(
         r = meta_by_key.get(comp_key)
         if r is None or r.get("status") == "failed":
             meta_str = "수집 실패"
+            print(
+                f"[META_SUMMARY_DEBUG] competitor={comp_key} display_name={display_name}"
+                f" today_displayed_meta_count=None previous_displayed_meta_count=N/A"
+                f" delta=N/A long_running_30d_exceeded_count=N/A"
+            )
         else:
-            # Prefer page-header count; fall back to written row count
             count = r.get("displayed_meta_count")
             if count is None:
                 count = r.get("written", 0)
-            meta_str = f"{count}개"
+            prev = prev_meta_counts.get(comp_key)
+            if count is not None and prev is not None:
+                delta = count - prev
+                delta_str = f"(+{delta}개)" if delta > 0 else (f"({delta}개)" if delta < 0 else "(0개)")
+            else:
+                delta_str = "(신규 기준)"
+                delta = None
+            meta_str = f"{count}개{delta_str}"
+            long_count = r.get("long_running_count", 0)
+            print(
+                f"[META_SUMMARY_DEBUG] competitor={comp_key} display_name={display_name}"
+                f" today_displayed_meta_count={count}"
+                f" previous_displayed_meta_count={prev}"
+                f" delta={delta}"
+                f" long_running_30d_exceeded_count={long_count}"
+            )
         lines.append(f"• {display_name}: {meta_str}")
+
+    # ── [Meta 30일 초과 광고] ────────────────────────────────────────────────
+    lines += ["", "*[Meta 30일 초과 광고]*"]
+    for comp_key, display_name in _META_ORDER:
+        r = meta_by_key.get(comp_key)
+        if r is None or r.get("status") == "failed":
+            lines.append(f"• {display_name}: 수집 실패")
+        else:
+            long_count = r.get("long_running_count", 0)
+            lines.append(f"• {display_name}: {long_count}개")
 
     # ── [공개방 수] ──────────────────────────────────────────────────────────
     lines += ["", "*[공개방 수]*"]
@@ -190,7 +247,8 @@ def run() -> None:
     status = "ok" if total_failed == 0 else ("partial" if total_failed < 5 else "failed")
 
     # ── Build Korean summary ─────────────────────────────────────────────────
-    summary_ko = _build_summary(today, meta_ad_stats, supply_stats, policy_stats)
+    prev_meta_counts = _get_previous_meta_counts(today)
+    summary_ko = _build_summary(today, meta_ad_stats, supply_stats, policy_stats, prev_meta_counts)
 
     # ── Write run_log row ────────────────────────────────────────────────────
     ensure_headers("run_log")

@@ -26,8 +26,12 @@ from playwright.async_api import Page, async_playwright
 
 _SNAPSHOT_DIR = Path(__file__).parents[3] / "data" / "snapshots" / "ads"
 _PAGE_LOAD_TIMEOUT = 30_000
-_SCROLL_PAUSE_MS = 1_500
-_MAX_SCROLLS = 3
+_INITIAL_RENDER_MS = 2_000   # extra wait after domcontentloaded (headless needs this)
+_SCROLL_PAUSE_MS = 2_000     # wait after each scroll-to-bottom
+_SCROLL_NUDGE_MS = 500       # wait after mouse-wheel nudge
+_MAX_SCROLLS = 15
+_NO_GROWTH_LIMIT = 3         # stop scrolling after N consecutive no-growth scrolls
+_TARGET_MIN_ROWS = 30        # minimum detail rows to aim for when displayed_count unknown
 
 _UI_FRAGMENTS = frozenset({
     "log in", "sign up", "learn more", "see more", "로그인", "회원가입",
@@ -88,10 +92,69 @@ def _extract_library_id(card_text: str) -> str:
     return ""
 
 
-async def _scroll_to_load(page: Page) -> None:
-    for _ in range(_MAX_SCROLLS):
-        await page.evaluate("window.scrollBy(0, window.innerHeight * 2)")
+async def _count_library_ids(page: Page) -> int:
+    """Count unique library IDs visible in page text — fast progress check."""
+    page_text = (await page.evaluate("document.body.innerText") or "")
+    return len(set(re.findall(r"라이브러리\s*ID[:：]?\s*(\d{10,})", page_text)))
+
+
+async def _scroll_adaptive(
+    page: Page,
+    competitor_key: str,
+    target: int,
+) -> int:
+    """Scroll until target unique library IDs are found or scroll budget exhausted.
+
+    Strategy per attempt:
+      1. scrollTo(0, scrollHeight) — fires IntersectionObserver / scroll events
+      2. mouse.wheel nudge         — fires wheel listeners some SPAs use
+      3. wait _SCROLL_PAUSE_MS + _SCROLL_NUDGE_MS
+
+    Stops early when:
+      - unique_ids >= target
+      - no new IDs for _NO_GROWTH_LIMIT consecutive attempts
+
+    Returns final unique library_id count.
+    """
+    prev_count = await _count_library_ids(page)
+    print(
+        f"  [META_SCROLL] competitor={competitor_key}"
+        f" initial_unique_ids={prev_count} target={target} max_scrolls={_MAX_SCROLLS}"
+    )
+
+    no_growth_count = 0
+
+    for attempt in range(1, _MAX_SCROLLS + 1):
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         await page.wait_for_timeout(_SCROLL_PAUSE_MS)
+        await page.mouse.wheel(0, 2_000)
+        await page.wait_for_timeout(_SCROLL_NUDGE_MS)
+
+        current_count = await _count_library_ids(page)
+        grew = current_count > prev_count
+        no_growth_count = 0 if grew else no_growth_count + 1
+
+        print(
+            f"  [META_SCROLL] competitor={competitor_key}"
+            f" attempt={attempt}/{_MAX_SCROLLS}"
+            f" unique_ids={current_count} target={target}"
+            f" no_growth={no_growth_count}"
+        )
+
+        if current_count >= target:
+            print(f"  [META_SCROLL] competitor={competitor_key} — target reached, stopping")
+            break
+
+        if no_growth_count >= _NO_GROWTH_LIMIT:
+            print(
+                f"  [META_SCROLL] competitor={competitor_key}"
+                f" — no growth for {_NO_GROWTH_LIMIT} scrolls, stopping"
+            )
+            break
+
+        prev_count = current_count
+
+    return current_count
 
 
 async def _extract_active_count(page: Page) -> tuple[Optional[int], str]:
@@ -287,6 +350,9 @@ async def collect(
                 timeout=_PAGE_LOAD_TIMEOUT,
             )
 
+            # Extra wait: headless environments render JS slower than local Chrome
+            await page.wait_for_timeout(_INITIAL_RENDER_MS)
+
             loaded = False
             for sel in [
                 "._7jyr",
@@ -296,7 +362,7 @@ async def collect(
                 ".x1yztbdb",
             ]:
                 try:
-                    await page.wait_for_selector(sel, timeout=10_000)
+                    await page.wait_for_selector(sel, timeout=8_000)
                     loaded = True
                     break
                 except Exception:
@@ -308,14 +374,27 @@ async def collect(
                     file=sys.stderr,
                 )
 
-            await _scroll_to_load(page)
+            # Extract the page-header count BEFORE scrolling (lives in a sticky header)
+            active_count, active_count_raw = await _extract_active_count(page)
+
+            # Compute scroll target: aim for min(displayed_count, max_ads), floor at TARGET_MIN_ROWS
+            if active_count is not None:
+                target = min(active_count, max_ads)
+            else:
+                target = min(_TARGET_MIN_ROWS, max_ads)
+
+            print(
+                f"  [META] {display_name}:"
+                f" displayed_meta_count={active_count} target_detail_rows={target}"
+            )
+
+            final_id_count = await _scroll_adaptive(page, competitor_key, target)
 
             if save_snapshot:
                 snap = _snapshot_path(competitor_key)
                 snap.write_text(await page.content(), encoding="utf-8")
                 print(f"  [META] Snapshot: {snap.name}")
 
-            active_count, active_count_raw = await _extract_active_count(page)
             creatives = await _extract_creatives(page, max_ads)
 
             visible_count = len(creatives)
@@ -324,8 +403,9 @@ async def collect(
 
             status = "ok" if active_count is not None else "partial"
             print(
-                f"  [META] {display_name}: count={active_count}"
-                f" raw={active_count_raw!r}, visible={visible_count}"
+                f"  [META] {display_name}: displayed_count={active_count}"
+                f" raw={active_count_raw!r} final_scroll_ids={final_id_count}"
+                f" final_written={visible_count} status={status}"
             )
 
             return {
