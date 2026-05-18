@@ -18,36 +18,43 @@
 
 ## GitHub Secrets 등록
 
-리포지터리 Settings → Secrets and variables → Actions → **New repository secret** 에서 아래 4개를 등록합니다.
+리포지터리 Settings → Secrets and variables → Actions → **New repository secret** 에서 아래 **4개**를 등록합니다.
 
 | Secret 이름 | 값 | 비고 |
 |---|---|---|
 | `GOOGLE_SHEET_ID` | Google Sheets URL의 `/d/` 뒤 문자열 | `.env`의 `GOOGLE_SHEET_ID` 값과 동일 |
 | `GOOGLE_CHAT_WEBHOOK_URL` | Google Chat 수신 Webhook URL | `.env`의 `GOOGLE_CHAT_WEBHOOK_URL` 값과 동일 |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON 파일 전체 내용 | `cat` 명령어로 복사 (아래 참조) |
-| `AIRDNA_STORAGE_STATE_JSON` | AirDNA 로그인 세션 JSON 파일 전체 내용 | `.auth/airdna_state.json` (아래 참조) |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON 파일 전체 내용 | 아래 참조 |
+| `AIRDNA_STATE_PASSPHRASE` | AirDNA 세션 암호화 passphrase | AirDNA GPG 암호화 시 직접 설정한 값 |
 
-### 서비스 계정 JSON 복사 방법
+> **제거된 Secret**: `AIRDNA_STORAGE_STATE_JSON` — JSON 전체를 Secret으로 저장하는 방식은  
+> GitHub Secret 크기 제한(64 KB)으로 인해 사용하지 않습니다. GPG 암호화 방식으로 대체됩니다.
+
+### 서비스 계정 JSON 등록 방법
 
 ```bash
-# 로컬에서 실행 — 출력 내용 전체를 Secret 값으로 붙여넣기
+# 로컬에서 실행 — 출력 내용 전체를 GOOGLE_SERVICE_ACCOUNT_JSON Secret 값으로 붙여넣기
 cat .secrets/google_service_account.json
 ```
 
-### AirDNA 세션 JSON 복사 방법
-
-```bash
-cat .auth/airdna_state.json
-```
-
-AirDNA는 로그인이 필요한 대시보드입니다. 세션이 만료되면 수집이 실패합니다.
+> **중요**: 서비스 계정 이메일을 Google Sheet에 **편집자**로 공유해야 합니다.  
+> 서비스 계정 이메일은 Actions 로그의 `[google_sheets] Service account email:` 줄에서 확인할 수 있습니다.  
+> Google Sheets → 공유 → 해당 이메일 추가 → 편집자 권한 부여.
 
 ---
 
-## AirDNA 세션 갱신
+## AirDNA 세션 암호화 방법 (최초 설정 및 세션 갱신 시)
 
-AirDNA 세션(`airdna_state.json`)은 만료되면 수집 실패(`login_required`)가 발생합니다.  
-만료 시 아래 절차로 갱신합니다.
+AirDNA 세션 파일(`.auth/airdna_state.json`)은 크기가 커서 GitHub Secret에 직접 저장할 수 없습니다.  
+GPG 대칭 암호화를 사용하여 암호화된 파일(`secrets/airdna_state.json.gpg`)을 repo에 커밋합니다.  
+복호화 passphrase만 GitHub Secret(`AIRDNA_STATE_PASSPHRASE`)으로 관리합니다.
+
+### 1단계: passphrase 결정
+
+안전한 임의 문자열을 하나 정합니다 (예: `openssl rand -hex 32` 출력값).  
+이 값을 GitHub Secret `AIRDNA_STATE_PASSPHRASE`에 등록합니다.
+
+### 2단계: 세션 갱신 (만료 시마다 반복)
 
 ```bash
 # 로컬에서 실행
@@ -56,28 +63,97 @@ python scripts/setup_airdna_session.py
 ```
 
 스크립트가 브라우저를 열면 AirDNA에 수동 로그인 후 엔터를 누릅니다.  
-갱신된 `.auth/airdna_state.json`을 `AIRDNA_STORAGE_STATE_JSON` Secret에 다시 등록합니다.
+`.auth/airdna_state.json`이 갱신됩니다.
+
+### 3단계: 암호화 후 커밋
+
+```bash
+# secrets/ 디렉토리가 없으면 생성
+mkdir -p secrets
+
+# 암호화 (YOUR_PASSPHRASE 자리에 실제 passphrase 입력)
+gpg --batch --yes --symmetric \
+    --cipher-algo AES256 \
+    --passphrase "YOUR_PASSPHRASE" \
+    --output secrets/airdna_state.json.gpg \
+    .auth/airdna_state.json
+
+# 정상 생성 확인
+ls -lh secrets/airdna_state.json.gpg
+
+# 커밋
+git add secrets/airdna_state.json.gpg
+git commit -m "chore: refresh AirDNA session"
+git push
+```
+
+> `.auth/airdna_state.json`(원본)은 `.gitignore`에 의해 커밋에서 제외됩니다.  
+> `secrets/airdna_state.json.gpg`(암호화본)만 커밋합니다.
+
+### 복호화 확인 (선택)
+
+```bash
+gpg --batch --yes --pinentry-mode loopback \
+    --passphrase "YOUR_PASSPHRASE" \
+    --decrypt --output /tmp/test_airdna.json \
+    secrets/airdna_state.json.gpg
+
+# 원본과 동일한지 확인
+diff .auth/airdna_state.json /tmp/test_airdna.json && echo "OK"
+```
 
 ---
 
-## 실패 시 확인 순서
+## Google Sheet 연결 진단
 
-1. **GitHub Actions 로그 확인**  
-   Actions 탭 → 실패한 실행 → 각 step 클릭 → 에러 메시지 확인
+실행 로그에서 아래 항목을 순서대로 확인합니다.
 
-2. **공통 실패 원인**
+### 확인 1: 인증 파일 복원 (Verify credentials file step)
 
-   | 증상 | 원인 | 조치 |
-   |---|---|---|
-   | `GOOGLE_APPLICATION_CREDENTIALS` 관련 에러 | 서비스 계정 Secret 누락/오기입 | Secret 재등록 |
-   | AirDNA `login_required` | 세션 만료 | AirDNA 세션 갱신 후 Secret 업데이트 |
-   | `ModuleNotFoundError` | `requirements.txt` 누락 패키지 | 로컬 `pip freeze`로 확인 후 추가 |
-   | Playwright timeout | 사이트 응답 지연 | 재실행(workflow_dispatch)으로 재시도 |
-   | Google Sheets API 403 | 서비스 계정 권한 없음 | 스프레드시트에 서비스 계정 이메일 공유 확인 |
+```
+[debug] file exists: YES
+[debug] file size:   2400 bytes
+[debug] service_account_email: cgm-bot@your-project.iam.gserviceaccount.com
+```
 
-3. **Google Chat 요약 미수신**  
-   Actions 로그에서 `[OK] Google Chat 요약 발송 완료` 또는 `[WARN] Google Chat 발송 실패` 확인.  
-   실패 시 `GOOGLE_CHAT_WEBHOOK_URL` Secret 값 확인.
+- `file exists: NO` → `GOOGLE_SERVICE_ACCOUNT_JSON` Secret이 비어 있거나 등록되지 않음
+- `parse error` → Secret 값이 올바른 JSON이 아님 (복사 시 잘림 또는 따옴표 문제)
+
+### 확인 2: Python 코드 내 진단 로그
+
+Python 프로세스 시작 후 첫 번째 Sheets 호출 시 아래 로그가 출력됩니다:
+
+```
+[google_sheets] GOOGLE_APPLICATION_CREDENTIALS='.secrets/google_service_account.json' exists=True
+[google_sheets] Credentials file size: 2400 bytes
+[google_sheets] Service account email: cgm-bot@your-project.iam.gserviceaccount.com
+```
+
+- `exists=False` → 워크플로우의 "Create required directories" 이전에 파일 복원이 실패한 것
+
+### 확인 3: append 성공 여부
+
+행이 정상적으로 기록되면:
+```
+[google_sheets] append_row OK → tab='raw_supply_snapshots'
+```
+
+실패하면:
+```
+[google_sheets] Sheets API error 403: ...
+```
+
+### 공통 실패 원인
+
+| 증상 | 원인 | 조치 |
+|---|---|---|
+| `403: The caller does not have permission` | 서비스 계정이 스프레드시트에 공유되지 않음 | Sheet에 서비스 계정 이메일을 편집자로 공유 |
+| `403: UNAUTHENTICATED` 또는 JWT 에러 | 서비스 계정 JSON이 잘못 붙여넣어짐 | Secret 재등록 |
+| `404: Requested entity was not found` | `GOOGLE_SHEET_ID`가 틀림 | Sheet URL에서 ID 재확인 |
+| `file exists: NO` | `GOOGLE_SERVICE_ACCOUNT_JSON` 미등록 | Secret 등록 |
+| AirDNA `login_required` | 세션 만료 | AirDNA 세션 갱신 절차 재실행 |
+| `ModuleNotFoundError` | `requirements.txt` 누락 패키지 | 로컬 `pip freeze`로 확인 후 추가 |
+| Playwright timeout | 사이트 응답 지연 | workflow_dispatch로 재시도 |
 
 ---
 
@@ -87,10 +163,11 @@ python scripts/setup_airdna_session.py
 checkout
   → Python 3.11 + pip cache
   → pip install -r requirements.txt
-  → playwright install chromium --with-deps
+  → playwright install chromium
   → mkdir (.auth, .secrets, data/snapshots/*)
-  → echo GOOGLE_SERVICE_ACCOUNT_JSON > .secrets/google_service_account.json
-  → echo AIRDNA_STORAGE_STATE_JSON    > .auth/airdna_state.json
+  → printf SA_JSON > .secrets/google_service_account.json
+  → [Verify credentials file]  ← 진단 로그
+  → gpg decrypt secrets/airdna_state.json.gpg → .auth/airdna_state.json
   → python -m src.jobs.run_daily
        ├─ collect_meta_ad_start_dates  (Meta 광고)
        ├─ collect_supply               (방 개수)
