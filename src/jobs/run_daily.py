@@ -7,6 +7,7 @@ Runs all four workflows in sequence:
   1. Ad collection — Meta Ad Library + Google Ads Transparency (collect_ads)
   2. Supply collection — listing/house counts (collect_supply)
   3. Policy / Notice board updates (detect_policy_changes)
+  4. App version monitoring — iOS App Store + Android Google Play (collect_app_versions)
 
 After all workflows finish:
   - Writes one row to the run_log sheet tab
@@ -17,10 +18,11 @@ All Google Chat messages are in Korean. No per-page English alerts are sent.
 
 import sys
 from datetime import datetime, timezone
+from typing import Optional
 
 from dotenv import load_dotenv
 
-from src.jobs import collect_meta_ad_start_dates, collect_supply, detect_policy_changes
+from src.jobs import collect_meta_ad_start_dates, collect_supply, detect_policy_changes, collect_app_versions
 from src.integrations.google_sheets import append_row, ensure_headers, read_sheet_rows
 from src.integrations.google_chat import send_google_chat_message
 
@@ -36,6 +38,17 @@ _META_ORDER = [
     ("mister_mention", "미스터멘션"),
     ("33m2_1",         "삼삼엠투1"),
     ("33m2_2",         "삼삼엠투2"),
+]
+
+# Fixed display order for [앱 업데이트] — 7 competitors (33m2 is single key in app_sources)
+_APP_ORDER = [
+    ("airbnb",         "Airbnb"),
+    ("liveanywhere",   "리브애니웨어"),
+    ("encostay",       "엔코스테이"),
+    ("zaristay",       "자리톡"),
+    ("zigbang",        "직방"),
+    ("mister_mention", "미스터멘션"),
+    ("33m2",           "삼삼엠투"),
 ]
 
 # Fixed display order for [정책/공지] — 6 competitors (자리톡 제외)
@@ -90,6 +103,7 @@ def _build_summary(
     supply_stats: dict,
     policy_stats: dict,
     prev_meta_counts: dict,
+    app_stats: Optional[dict] = None,
 ) -> str:
     lines = [
         f"*경쟁사 모니터링 일일 리포트* ({date})",
@@ -192,10 +206,45 @@ def _build_summary(
         else:
             lines.append(f"• {display_name}: 수집 실패")
 
+    # ── [앱 업데이트] ────────────────────────────────────────────────────────
+    lines += ["", "*[앱 업데이트]*"]
+    if app_stats:
+        app_results = app_stats.get("results", [])
+        app_by_key: dict[tuple, dict] = {}
+        for r in app_results:
+            app_by_key[(r.get("competitor"), r.get("platform"))] = r
+
+        for comp_key, display_name in _APP_ORDER:
+            parts = []
+            for platform in ("ios", "android"):
+                r = app_by_key.get((comp_key, platform))
+                if r is None:
+                    continue
+                status = r.get("status", "failed")
+                if status == "failed":
+                    parts.append(f"{platform.upper()} 수집 실패")
+                elif status == "not_found":
+                    parts.append(f"{platform.upper()} 앱 없음")
+                else:
+                    ver = r.get("version", "")
+                    if r.get("is_new_version"):
+                        parts.append(f"{platform.upper()} {ver} ★신규")
+                    elif r.get("is_changed"):
+                        parts.append(f"{platform.upper()} {ver} (변경)")
+                    else:
+                        parts.append(f"{platform.upper()} {ver}")
+            if parts:
+                lines.append(f"• {display_name}: {' / '.join(parts)}")
+            else:
+                lines.append(f"• {display_name}: 미설정")
+    else:
+        lines.append("• 앱 수집 미실행")
+
     total_failed = (
         meta_ad_stats.get("failed", 0)
         + supply_stats.get("failed", 0)
         + policy_stats.get("failed", 0)
+        + (app_stats.get("failed", 0) if app_stats else 0)
     )
     finished = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines += [
@@ -211,7 +260,7 @@ def run() -> None:
     print(f"\n=== run_daily start ({run_started_at}) ===\n")
 
     # ── Workflow 1: Meta 광고 게재일 수집 ────────────────────────────────────
-    print(">>> [1/3] Meta 광고 게재일 수집 (meta_ad_start_dates)")
+    print(">>> [1/4] Meta 광고 게재일 수집 (meta_ad_start_dates)")
     meta_ad_stats: dict = {"checked": 0, "failed": 0, "written": 0, "results": []}
     try:
         meta_ad_stats = collect_meta_ad_start_dates.run()
@@ -220,7 +269,7 @@ def run() -> None:
         meta_ad_stats["failed"] += len(_META_ORDER)
 
     # ── Workflow 2: Supply collection ────────────────────────────────────────
-    print("\n>>> [2/3] 방 개수 수집")
+    print("\n>>> [2/4] 방 개수 수집")
     supply_stats: dict = {"checked": 0, "failed": 0, "results": []}
     try:
         supply_stats = collect_supply.run()
@@ -229,7 +278,7 @@ def run() -> None:
         supply_stats["failed"] += 3
 
     # ── Workflow 3: Policy / Notice board updates ────────────────────────────
-    print("\n>>> [3/3] 정책/공지 확인")
+    print("\n>>> [3/4] 정책/공지 확인")
     policy_stats: dict = {
         "checked": 0, "new_count": 0, "changed_count": 0, "failed": 0, "results": [],
     }
@@ -238,17 +287,26 @@ def run() -> None:
     except Exception as exc:
         print(f"[ERROR] detect_policy_changes failed: {exc}", file=sys.stderr)
 
+    # ── Workflow 4: App version monitoring ───────────────────────────────────
+    print("\n>>> [4/4] 앱 버전 수집")
+    app_stats: dict = {"checked": 0, "failed": 0, "results": []}
+    try:
+        app_stats = collect_app_versions.run()
+    except Exception as exc:
+        print(f"[ERROR] collect_app_versions failed: {exc}", file=sys.stderr)
+
     run_finished_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     total_failed = (
         meta_ad_stats.get("failed", 0)
         + supply_stats.get("failed", 0)
         + policy_stats.get("failed", 0)
+        + app_stats.get("failed", 0)
     )
     status = "ok" if total_failed == 0 else ("partial" if total_failed < 5 else "failed")
 
     # ── Build Korean summary ─────────────────────────────────────────────────
     prev_meta_counts = _get_previous_meta_counts(today)
-    summary_ko = _build_summary(today, meta_ad_stats, supply_stats, policy_stats, prev_meta_counts)
+    summary_ko = _build_summary(today, meta_ad_stats, supply_stats, policy_stats, prev_meta_counts, app_stats)
 
     # ── Write run_log row ────────────────────────────────────────────────────
     ensure_headers("run_log")

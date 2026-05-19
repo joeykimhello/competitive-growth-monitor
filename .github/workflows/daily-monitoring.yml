@@ -1,6 +1,6 @@
 name: Daily Monitoring
 
-on:
+"on":
   schedule:
     - cron: '0 0 * * *'   # 09:00 KST (UTC+9)
   workflow_dispatch:        # 수동 실행 허용
@@ -31,7 +31,8 @@ jobs:
           mkdir -p .auth .secrets \
             data/snapshots/supply \
             data/snapshots/ads \
-            data/snapshots/policy
+            data/snapshots/policy \
+            data/snapshots/apps
 
       - name: Restore Google service account
         env:
