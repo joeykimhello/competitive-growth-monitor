@@ -210,33 +210,41 @@ def _build_summary(
     lines += ["", "*[앱 업데이트]*"]
     if app_stats:
         app_results = app_stats.get("results", [])
-        app_by_key: dict[tuple, dict] = {}
+        app_by_key: dict = {}
         for r in app_results:
             app_by_key[(r.get("competitor"), r.get("platform"))] = r
 
         for comp_key, display_name in _APP_ORDER:
-            parts = []
             for platform in ("ios", "android"):
                 r = app_by_key.get((comp_key, platform))
                 if r is None:
                     continue
+                plat_label = "iOS" if platform == "ios" else "Android"
                 status = r.get("status", "failed")
+                ver = r.get("version", "")
+                ver_str = f"v{ver}" if ver else "v없음"
+                change_ko = r.get("change_summary_ko", "")
+
                 if status == "failed":
-                    parts.append(f"{platform.upper()} 수집 실패")
+                    state_str = "수집 실패"
                 elif status == "not_found":
-                    parts.append(f"{platform.upper()} 앱 없음")
-                else:
-                    ver = r.get("version", "")
+                    state_str = "앱 없음"
+                elif status == "partial":
                     if r.get("is_new_version"):
-                        parts.append(f"{platform.upper()} {ver} ★신규")
+                        state_str = f"부분 수집 / 업데이트 감지 - {change_ko}" if change_ko else "부분 수집 / 업데이트 감지"
                     elif r.get("is_changed"):
-                        parts.append(f"{platform.upper()} {ver} (변경)")
+                        state_str = f"부분 수집 / 변경 감지 - {change_ko}" if change_ko else "부분 수집 / 변경 감지"
                     else:
-                        parts.append(f"{platform.upper()} {ver}")
-            if parts:
-                lines.append(f"• {display_name}: {' / '.join(parts)}")
-            else:
-                lines.append(f"• {display_name}: 미설정")
+                        state_str = "부분 수집 / 변경 없음"
+                else:  # ok
+                    if r.get("is_new_version"):
+                        state_str = f"업데이트 감지 - {change_ko}" if change_ko else "업데이트 감지"
+                    elif r.get("is_changed"):
+                        state_str = f"변경 감지 - {change_ko}" if change_ko else "변경 감지"
+                    else:
+                        state_str = "변경 없음"
+
+                lines.append(f"• {display_name} {plat_label}: {ver_str} / {state_str}")
     else:
         lines.append("• 앱 수집 미실행")
 

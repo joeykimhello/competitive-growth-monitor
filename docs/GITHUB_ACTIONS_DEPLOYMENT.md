@@ -11,7 +11,8 @@
 
 | 방식 | 내용 |
 |------|------|
-| 자동 | 매일 00:00 UTC = 09:00 KST |
+| 자동 (정기) | 매일 00:00 UTC = 09:00 KST |
+| 자동 (테스트) | 매일 03:30 UTC = 12:30 KST (임시 schedule 테스트용) |
 | 수동 | GitHub → Actions → "Daily Monitoring" → "Run workflow" |
 
 ---

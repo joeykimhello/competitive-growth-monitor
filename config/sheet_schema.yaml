@@ -291,6 +291,57 @@ spreadsheet:
         type: string
         description: 오류 또는 누락 필드 메시지
 
+  app_versions:
+    columns:
+      - name: date
+        type: date
+        description: 수집 날짜 (YYYY-MM-DD)
+      - name: checked_at
+        type: datetime
+        description: 수집 UTC 타임스탬프
+      - name: competitor
+        type: string
+        description: 경쟁사 키
+      - name: platform
+        type: string
+        description: ios | android
+      - name: app_name
+        type: string
+        description: 앱 이름 (스토어에서 추출)
+      - name: app_id
+        type: string
+        description: iOS App Store 숫자 ID (iOS 전용; Android는 공백)
+      - name: package_name
+        type: string
+        description: iOS bundle_id 또는 Android 패키지명
+      - name: version
+        type: string
+        description: 최신 버전 문자열
+      - name: release_date
+        type: string
+        description: 최신 버전 출시일 (ISO 또는 현지 표기)
+      - name: release_notes
+        type: string
+        description: 버전 업데이트 내용 (What's New 원문)
+      - name: store_url
+        type: string
+        description: App Store 또는 Play Store 공개 페이지 URL
+      - name: is_new_version
+        type: boolean
+        description: 이전 수집 대비 버전 변경 여부 (TRUE | FALSE)
+      - name: is_changed
+        type: boolean
+        description: 이전 수집 대비 version/release_date/release_notes 중 하나 이상 변경 (TRUE | FALSE)
+      - name: change_summary_ko
+        type: string
+        description: 변경 요약 (한국어); 첫 수집 시 "기준 스냅샷 저장"; 변경 없으면 공백
+      - name: status
+        type: string
+        description: ok | not_found | failed
+      - name: error_message
+        type: string
+        description: 오류 메시지
+
   meta_ad_counts:
     columns:
       - name: date

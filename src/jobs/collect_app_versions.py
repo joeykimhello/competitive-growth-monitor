@@ -1,7 +1,9 @@
 """Collect iOS and Android app version info for all configured competitors.
 
 Usage:
-    python -m src.jobs.collect_app_versions
+    python -m src.jobs.collect_app_versions                          # all
+    python -m src.jobs.collect_app_versions --competitor 33m2        # one competitor
+    python -m src.jobs.collect_app_versions --competitor 33m2 --platform android
 
 Reads config/app_sources.yaml. For each competitor:
   - If ios_app_id is set:      iTunes Lookup API (no auth required)
@@ -21,6 +23,7 @@ Row schema (mirrors sheet_schema.yaml app_versions):
 Returns stats dict for run_daily.py: {checked, failed, results}
 """
 
+import argparse
 import sys
 import time
 from datetime import datetime, timezone
@@ -96,8 +99,15 @@ def _compute_change(result: dict, prev: Optional[dict]) -> Tuple[bool, bool, str
     return is_new_version, is_changed, change_summary_ko
 
 
-def run() -> dict:
+def run(
+    competitor_filter: Optional[str] = None,
+    platform_filter: Optional[str] = None,
+) -> dict:
     """Run app version collection for all configured competitors/platforms.
+
+    Args:
+        competitor_filter: if set, collect only this competitor key (e.g. "33m2")
+        platform_filter:   if set, collect only "ios" or "android"
 
     Returns:
         checked: number of (competitor, platform) rows with status != failed
@@ -116,6 +126,9 @@ def run() -> dict:
     results = []
 
     for competitor_key, cfg in app_sources.items():
+        if competitor_filter and competitor_key != competitor_filter:
+            continue
+
         display_name = cfg.get("display_name", competitor_key)
         ios_app_id = cfg.get("ios_app_id")
         android_package = cfg.get("android_package")
@@ -125,7 +138,7 @@ def run() -> dict:
         print(f"\n[APP] {display_name}")
 
         # ── iOS ──────────────────────────────────────────────────────────────
-        if ios_app_id:
+        if ios_app_id and (platform_filter is None or platform_filter == "ios"):
             result = itunes_lookup.collect(app_id=ios_app_id, country="kr")
             status = result["status"]
             prev = previous_map.get((competitor_key, "ios"))
@@ -179,7 +192,7 @@ def run() -> dict:
             time.sleep(_REQUEST_DELAY_SEC)
 
         # ── Android ──────────────────────────────────────────────────────────
-        if android_package:
+        if android_package and (platform_filter is None or platform_filter == "android"):
             result = google_play.collect_sync(package_id=android_package)
             status = result["status"]
             prev = previous_map.get((competitor_key, "android"))
@@ -232,12 +245,27 @@ def run() -> dict:
             })
             time.sleep(_REQUEST_DELAY_SEC)
 
-        if not ios_app_id and not android_package:
-            print(f"  [APP] No app IDs configured for {display_name} — skipping")
+        ios_active = ios_app_id and (platform_filter is None or platform_filter == "ios")
+        android_active = android_package and (platform_filter is None or platform_filter == "android")
+        if not ios_active and not android_active:
+            print(f"  [APP] No app IDs configured (or filtered out) for {display_name} — skipping")
 
     print(f"\n[APP] Done. {checked} row(s) written to '{_TAB}'. failed={failed}")
     return {"checked": checked, "failed": failed, "results": results}
 
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(description="Collect app version info")
+    parser.add_argument(
+        "--competitor",
+        default=None,
+        help="Collect only this competitor key, e.g. 33m2",
+    )
+    parser.add_argument(
+        "--platform",
+        default=None,
+        choices=["ios", "android"],
+        help="Collect only ios or android",
+    )
+    args = parser.parse_args()
+    run(competitor_filter=args.competitor, platform_filter=args.platform)
