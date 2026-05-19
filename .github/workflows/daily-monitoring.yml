@@ -2,9 +2,9 @@ name: Daily Monitoring
 
 "on":
   schedule:
-    - cron: '0 0 * * *'    # 09:00 KST regular daily run (UTC+9)
-    - cron: '30 3 * * *'   # 12:30 KST temporary schedule test run
-  workflow_dispatch:        # 수동 실행 허용
+    - cron: '0 0 * * *'    # 09:00 KST 정기 실행 (UTC 00:00)
+    - cron: '48 6 * * *'   # 15:48 KST 임시 테스트 (UTC 06:48) — 확인 후 제거
+  workflow_dispatch:        # 수동 실행
 
 jobs:
   run-daily:

@@ -9,11 +9,110 @@
 
 ## 스케줄 & 수동 실행
 
-| 방식 | 내용 |
-|------|------|
-| 자동 (정기) | 매일 00:00 UTC = 09:00 KST |
-| 자동 (테스트) | 매일 03:30 UTC = 12:30 KST (임시 schedule 테스트용) |
-| 수동 | GitHub → Actions → "Daily Monitoring" → "Run workflow" |
+| 방식 | cron (UTC) | KST | 비고 |
+|------|-----------|-----|------|
+| 자동 (정기) | `0 0 * * *` | 09:00 | 매일 정기 실행 |
+| 자동 (임시 테스트) | `48 6 * * *` | 15:48 | 확인 후 제거 예정 |
+| 수동 | — | — | GitHub → Actions → "Daily Monitoring" → "Run workflow" |
+
+---
+
+## Schedule 트리거 검증 및 문제 해결
+
+### 전제 조건 체크리스트
+
+자동 schedule이 실행되려면 아래 조건이 모두 충족돼야 합니다.
+
+**1. 워크플로우 파일이 default branch에 있어야 한다**  
+`main` 브랜치에만 schedule이 인식됩니다. feature 브랜치에서 push해도 schedule은 동작하지 않습니다.
+
+```bash
+# 확인
+git branch -r     # origin/main이 default branch인지 확인
+git log --oneline origin/main -3  # 최근 커밋에 워크플로우 변경이 포함됐는지 확인
+```
+
+**2. `on:` 키가 GitHub Actions에서 인식되는 형태인지**  
+YAML에서 `on`은 일부 파서에서 boolean `true`로 해석될 수 있습니다.  
+이 파일에서는 `"on":` (따옴표 포함)을 사용해 문자열 키로 강제합니다 — 이것이 안전한 형태입니다.
+
+**3. schedule과 workflow_dispatch가 같은 레벨에 있어야 한다**
+
+```yaml
+"on":           # 최상위
+  schedule:     # "on" 아래 (같은 레벨)
+    - cron: '...'
+  workflow_dispatch:  # "on" 아래 (같은 레벨)
+```
+
+**4. cron은 항상 UTC 기준이다**
+
+| KST 시각 | UTC 변환 | cron 표기 |
+|---------|---------|---------|
+| 09:00 KST | 00:00 UTC | `0 0 * * *` |
+| 12:48 KST | 03:48 UTC | `48 3 * * *` |
+| 15:48 KST | 06:48 UTC | `48 6 * * *` |
+
+KST = UTC + 9. cron 설정 시 반드시 9시간을 빼서 UTC로 변환.
+
+**5. 워크플로우가 disabled 상태가 아닌지**  
+60일 이상 저장소 활동이 없으면 GitHub가 scheduled workflow를 자동으로 비활성화합니다.
+
+확인 경로: **GitHub 저장소 → Actions 탭 → 왼쪽 사이드바 "Daily Monitoring" 클릭 → 오른쪽 상단 "..." 메뉴 → "Enable workflow"** 버튼이 보이면 비활성화된 상태입니다. 클릭해서 재활성화합니다.
+
+---
+
+### Schedule 실행 확인 방법
+
+schedule로 자동 실행됐는지 확인하려면 실행 목록에서 **Event 컬럼이 `schedule`**인지 확인합니다.
+
+```
+GitHub 저장소 → Actions → Daily Monitoring
+→ 실행 목록 중 Event 가 "schedule" 인 항목 확인
+  (수동 실행은 "workflow_dispatch"로 표시됨)
+```
+
+---
+
+### Schedule 실행이 안 될 때 순서대로 확인
+
+1. **워크플로우 파일이 `main` 브랜치에 push됐는지 확인**  
+   push 이전에 지난 cron 시간은 소급 실행되지 않습니다.  
+   예: `0 0 * * *`을 23:50 UTC에 push하면 당일 00:00은 이미 지났으므로 내일 00:00부터 실행됩니다.
+
+2. **workflow가 disabled 상태인지 확인** (위 5번 참조)
+
+3. **cron이 UTC 기준으로 올바른지 확인**  
+   `0 0 * * *` = UTC 00:00 = KST 09:00 ✓
+
+4. **실행 시간 지연 허용**  
+   GitHub 서버 부하 시 scheduled workflow는 예정 시각보다 **10~30분 지연**될 수 있습니다.  
+   특히 정각(`:00`)은 부하가 집중되므로, 테스트 cron은 `:48`, `:23`처럼 비정각 분으로 설정을 권장합니다.  
+   schedule 확인 시 **최소 20분은 기다린 후** Actions 탭을 확인합니다.
+
+5. **Actions 탭에서 실행 기록이 없으면 re-enable 후 dummy push**
+
+```bash
+# 아무 변경이나 push해서 GitHub가 워크플로우를 재인식하게 함
+git commit --allow-empty -m "chore: trigger workflow re-recognition"
+git push origin main
+```
+
+---
+
+### 임시 테스트 cron 추가 방법
+
+schedule이 동작하는지 빠르게 확인하려면 현재 시각 기준 10~15분 뒤에 cron을 추가합니다.
+
+```bash
+# 현재 UTC 시각 확인
+date -u +"%H:%M"
+# 예: 06:33 UTC → 15:33 KST
+# 15분 뒤 → 06:48 UTC = 15:48 KST
+# cron: '48 6 * * *'
+```
+
+테스트 후 해당 cron 줄을 반드시 제거합니다.
 
 ---
 
