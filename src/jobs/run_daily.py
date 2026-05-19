@@ -72,28 +72,33 @@ _SUPPLY_ORDER = ["Airbnb", "리브애니웨어", "엔코스테이"]
 
 
 def _get_previous_meta_counts(today: str) -> dict:
-    """Return {competitor_key: displayed_meta_count} for the most recent date < today.
+    """Return {competitor_key: {"date": str, "count": int}} for the most recent date < today.
 
-    Reads the meta_ad_counts sheet tab. If the tab is empty or unreadable, returns {}.
+    Only non-failed rows are considered. Reads the meta_ad_counts sheet tab.
+    Returns {} if the tab is empty, unreadable, or no qualifying rows exist.
     """
     rows = read_sheet_rows("meta_ad_counts")
-    # Collect (date, count) per competitor, keeping only dates strictly before today
-    by_comp: dict[str, list[tuple[str, int]]] = {}
+    by_comp: dict = {}
     for row in rows:
         d = row.get("date", "")
         comp = row.get("competitor", "")
         cnt_str = row.get("displayed_meta_count", "")
+        status = row.get("status", "")
+        # Exclude: today's rows, failed rows, rows with no count
         if not d or not comp or not cnt_str or d >= today:
+            continue
+        if status == "failed":
             continue
         try:
             by_comp.setdefault(comp, []).append((d, int(cnt_str)))
         except (ValueError, TypeError):
             continue
-    # For each competitor pick the count from the most recent previous date
+    # For each competitor pick the count from the most recent qualifying date
     result = {}
     for comp, entries in by_comp.items():
         entries.sort(key=lambda x: x[0], reverse=True)
-        result[comp] = entries[0][1]
+        best_date, best_count = entries[0]
+        result[comp] = {"date": best_date, "count": best_count}
     return result
 
 
@@ -121,27 +126,34 @@ def _build_summary(
             meta_str = "수집 실패"
             print(
                 f"[META_SUMMARY_DEBUG] competitor={comp_key} display_name={display_name}"
-                f" today_displayed_meta_count=None previous_displayed_meta_count=N/A"
-                f" delta=N/A long_running_30d_exceeded_count=N/A"
+                f" today_date={date} today_count=None"
+                f" previous_date=N/A previous_count=N/A delta=N/A delta_label=N/A"
             )
         else:
-            count = r.get("displayed_meta_count")
-            if count is None:
-                count = r.get("written", 0)
-            prev = prev_meta_counts.get(comp_key)
+            count = r.get("displayed_meta_count")  # page-header count, not written row count
+            prev_info = prev_meta_counts.get(comp_key)  # {"date": str, "count": int} or None
+            prev = prev_info["count"] if prev_info else None
+            prev_date = prev_info["date"] if prev_info else None
+
             if count is not None and prev is not None:
                 delta = count - prev
                 delta_str = f"(+{delta}개)" if delta > 0 else (f"({delta}개)" if delta < 0 else "(0개)")
-            else:
-                delta_str = "(신규 기준)"
+                meta_str = f"{count}개{delta_str}"
+            elif count is not None:
                 delta = None
-            meta_str = f"{count}개{delta_str}"
+                delta_str = "(신규 기준)"
+                meta_str = f"{count}개{delta_str}"
+            else:
+                delta = None
+                delta_str = ""
+                meta_str = "수집 실패"
+
             long_count = r.get("long_running_count", 0)
             print(
                 f"[META_SUMMARY_DEBUG] competitor={comp_key} display_name={display_name}"
-                f" today_displayed_meta_count={count}"
-                f" previous_displayed_meta_count={prev}"
-                f" delta={delta}"
+                f" today_date={date} today_count={count}"
+                f" previous_date={prev_date} previous_count={prev}"
+                f" delta={delta} delta_label={delta_str}"
                 f" long_running_30d_exceeded_count={long_count}"
             )
         lines.append(f"• {display_name}: {meta_str}")
@@ -172,6 +184,8 @@ def _build_summary(
             entry = f"{display_region} {count:,}개"
         elif status == "login_required":
             entry = f"{display_region} 로그인 필요"
+        elif status == "sheet_write_failed":
+            entry = f"{display_region} 시트 저장 실패"
         else:
             entry = f"{display_region} 수집 실패"
         grouped.setdefault(display_comp, []).append(entry)

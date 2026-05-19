@@ -257,6 +257,16 @@ def run() -> dict:
                 "dupes": 0,
                 "displayed_meta_count": None,
             })
+            append_row("meta_ad_counts", {
+                "date": today,
+                "collected_at": collected_at,
+                "competitor": competitor_key,
+                "display_name": display_name,
+                "displayed_meta_count": "",
+                "status": "failed",
+                "error_message": collector_result.get("error", ""),
+                "source_url": source_url,
+            })
             continue
 
         creatives = collector_result.get("creatives", [])
@@ -364,8 +374,13 @@ def run() -> dict:
         })
         append_row("meta_ad_counts", {
             "date": today,
+            "collected_at": collected_at,
             "competitor": competitor_key,
+            "display_name": display_name,
             "displayed_meta_count": displayed_meta_count if displayed_meta_count is not None else "",
+            "status": collector_result["status"],
+            "error_message": "",
+            "source_url": source_url,
         })
 
     print(

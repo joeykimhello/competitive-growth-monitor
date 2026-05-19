@@ -126,18 +126,25 @@ def run() -> dict:
                 checked += 1
                 count_str = f"{count:,}" if count is not None else "null"
                 print(f"  [{status.upper()}] {display_name} / {region_label}: count={count_str}")
+                results.append({
+                    "competitor": competitor_key,
+                    "region": region_key,
+                    "status": status,
+                    "count": count,
+                })
             else:
+                if status != "failed":
+                    failed += 1
                 print(
                     f"  [WARN] Sheet write failed for {display_name} / {region_label}",
                     file=sys.stderr,
                 )
-
-            results.append({
-                "competitor": competitor_key,
-                "region": region_key,
-                "status": status,
-                "count": count,
-            })
+                results.append({
+                    "competitor": competitor_key,
+                    "region": region_key,
+                    "status": "sheet_write_failed",
+                    "count": None,
+                })
 
             time.sleep(_REQUEST_DELAY_SEC)
 

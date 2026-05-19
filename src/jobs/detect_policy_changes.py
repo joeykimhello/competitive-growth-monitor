@@ -335,6 +335,53 @@ async def _playwright_fetch_notice_generic(listing_url: str, competitor: str) ->
             await browser.close()
 
 
+def _parse_liveanywhere_notices_bs4(html: str, listing_url: str) -> list:
+    """Extract individual notice posts from LiveAnywhere listing HTML via BS4.
+
+    Each post row is a <ul> containing a <a href*="bmode=view"> title link
+    and a <li> with a plain YYYY-MM-DD date string.
+    """
+    _date_exact = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+    soup = BeautifulSoup(html, "lxml")
+    posts = []
+    seen: set = set()
+
+    for a_tag in soup.find_all("a", href=lambda h: h and "bmode=view" in h):
+        title = a_tag.get_text(strip=True)
+        if not title or len(title) < 3:
+            continue  # skip empty-text full-row mobile links
+
+        href = a_tag.get("href", "")
+        if not href.startswith("http"):
+            href = urljoin(listing_url, href)
+        if href in seen:
+            continue
+        seen.add(href)
+
+        # Date is in a sibling <li> of the parent <ul>
+        pub_date = ""
+        ul = a_tag.find_parent("ul")
+        if ul:
+            for li in ul.find_all("li", recursive=False):
+                li_text = li.get_text(strip=True)
+                if _date_exact.match(li_text):
+                    pub_date = li_text
+                    break
+
+        if not pub_date:
+            continue
+
+        posts.append({
+            "title": title[:300],
+            "url": href,
+            "published_at": pub_date,
+            "_date_key": pub_date.replace("-", ""),
+        })
+
+    posts.sort(key=lambda x: x["_date_key"], reverse=True)
+    return posts
+
+
 async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
     """Fetch LiveAnywhere JS-rendered notice listing and detail page.
 
@@ -396,9 +443,19 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
 
             listing_html = await page.content()
 
-            # --- Multi-strategy row collection ---
-            _date_re = re.compile(r'\d{4}-\d{2}-\d{2}')
+            # --- Primary: BS4 bmode=view link extraction ---
+            posts_found = _parse_liveanywhere_notices_bs4(listing_html, listing_url)
+            used_strategy = "bs4 bmode=view" if posts_found else ""
 
+            if posts_found:
+                print(f"  [LiveAnywhere] strategy='{used_strategy}' candidates={len(posts_found)}")
+                for entry in posts_found[:3]:
+                    print(f"  [LiveAnywhere]   {entry['published_at']}: {entry['title'][:80]}")
+            else:
+                # --- Fallback: Playwright DOM strategies ---
+                _date_re = re.compile(r'\d{4}-\d{2}-\d{2}')
+
+            # Fallback Playwright strategies (only runs if BS4 found nothing)
             async def _collect_rows(locator) -> list[dict]:
                 found = []
                 total = await locator.count()
@@ -406,6 +463,10 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
                     try:
                         row = locator.nth(i)
                         row_text = await row.inner_text(timeout=3_000)
+                        # Skip container-level elements whose text is too large to be
+                        # a single notice row (e.g. the outer div containing all posts).
+                        if len(row_text) > 500:
+                            continue
                         dm = _date_re.search(row_text)
                         if not dm:
                             continue
@@ -428,6 +489,10 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
                         if href and not href.startswith("http"):
                             href = urljoin(listing_url, href)
 
+                        # Skip navigation/filter links that resolve back to the listing page
+                        if href == listing_url:
+                            href = ""
+
                         if title or href:
                             found.append({
                                 "title": title, "url": href,
@@ -437,27 +502,24 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
                         continue
                 return found
 
-            strategies = [
-                ("table tbody tr",    page.locator("table tbody tr")),
-                ("[role=row]",        page.locator("[role='row']:not([role='columnheader'])")),
-                ("main listitem",     page.locator("main").get_by_role("listitem")),
-                ("main div w/date",   page.locator("main div").filter(
-                                          has_text=re.compile(r'\d{4}-\d{2}-\d{2}'))),
-            ]
-
-            posts_found: list[dict] = []
-            used_strategy = ""
-            for name, locator in strategies:
-                rows = await _collect_rows(locator)
-                if rows:
-                    posts_found = rows
-                    used_strategy = name
-                    break
-
-            # Debug logging
-            print(f"  [LiveAnywhere] strategy='{used_strategy}' candidates={len(posts_found)}")
-            for entry in posts_found[:3]:
-                print(f"  [LiveAnywhere]   {entry['published_at']}: {entry['title'][:80]}")
+            if not posts_found:
+                strategies = [
+                    ("table tbody tr",    page.locator("table tbody tr")),
+                    ("[role=row]",        page.locator("[role='row']:not([role='columnheader'])")),
+                    ("main listitem",     page.locator("main").get_by_role("listitem")),
+                    ("main div w/date",   page.locator("main div").filter(
+                                              has_text=re.compile(r'\d{4}-\d{2}-\d{2}'))),
+                ]
+                for name, locator in strategies:
+                    rows = await _collect_rows(locator)
+                    if rows:
+                        posts_found = rows
+                        used_strategy = name
+                        break
+                # Debug logging for Playwright fallback
+                print(f"  [LiveAnywhere] strategy='{used_strategy}' candidates={len(posts_found)}")
+                for entry in posts_found[:3]:
+                    print(f"  [LiveAnywhere]   {entry['published_at']}: {entry['title'][:80]}")
 
             if not posts_found:
                 return None, "", listing_html, candidates

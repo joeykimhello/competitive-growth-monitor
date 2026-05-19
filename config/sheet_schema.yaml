@@ -347,12 +347,27 @@ spreadsheet:
       - name: date
         type: date
         description: 수집 날짜 (YYYY-MM-DD)
+      - name: collected_at
+        type: datetime
+        description: 수집 UTC 타임스탬프
       - name: competitor
         type: string
         description: 경쟁사 키 (airbnb | liveanywhere | encostay | zaristay | zigbang | mister_mention | 33m2_1 | 33m2_2)
+      - name: display_name
+        type: string
+        description: 경쟁사 표시명 (Airbnb | LiveAnywhere 등)
       - name: displayed_meta_count
         type: integer
         description: Meta Ad Library 화면 표시 광고 수 (결과 ~N개 헤더에서 추출)
+      - name: status
+        type: string
+        description: 수집 상태 (ok | partial | failed)
+      - name: error_message
+        type: string
+        description: 오류 메시지 (정상 수집 시 공백)
+      - name: source_url
+        type: string
+        description: Meta Ad Library 수집 URL (경쟁사별 고정)
 
 legacy:
   # 아래 탭은 더 이상 어떤 Job도 기록하지 않습니다.
