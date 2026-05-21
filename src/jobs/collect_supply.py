@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 from src.collectors.supply import airbnb as _airbnb
 from src.collectors.supply import encostay as _encostay
 from src.collectors.supply import liveanywhere as _liveanywhere
+from src.collectors.supply import m33m2 as _m33m2
 from src.integrations.google_sheets import append_row, ensure_headers
 
 load_dotenv()
@@ -40,6 +41,7 @@ _COLLECTORS = {
     "airbnb": _airbnb,
     "liveanywhere": _liveanywhere,
     "encostay": _encostay,
+    "33m2": _m33m2,
 }
 
 

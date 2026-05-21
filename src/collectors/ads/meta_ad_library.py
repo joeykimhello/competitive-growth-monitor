@@ -369,6 +369,30 @@ async def collect(
                     continue
 
             if not loaded:
+                # Detect "no ads" result page — count=0 is a valid ok state, not a failure
+                no_results = await page.evaluate("""
+                    () => {
+                        const t = document.body.innerText || '';
+                        const patterns = [
+                            '검색 기준과 일치하는 광고가 없습니다',
+                            '일치하는 광고가 없습니다',
+                            'No ads match your selection',
+                            'No results found',
+                        ];
+                        return patterns.find(p => t.includes(p)) || null;
+                    }
+                """)
+                if no_results:
+                    print(f"  [META] {display_name}: 광고 0개 (no-results 페이지 감지, status=ok)")
+                    return {
+                        "active_ad_count": 0,
+                        "active_ad_count_raw": "no_results",
+                        "visible_ad_count": 0,
+                        "creatives": [],
+                        "source_url": page.url,
+                        "status": "ok",
+                        "error": None,
+                    }
                 print(
                     f"  [META] No ad card selector matched for {display_name}",
                     file=sys.stderr,
@@ -400,6 +424,34 @@ async def collect(
             visible_count = len(creatives)
             if active_count is None and visible_count > 0:
                 active_count = visible_count
+
+            # Post-scroll no-results check: React renders "광고 없음" message only
+            # after the page fully loads — the early check (before scrolling) fires
+            # too soon and misses it. By this point the DOM is stable.
+            if active_count is None and visible_count == 0:
+                no_results_post = await page.evaluate("""
+                    () => {
+                        const t = document.body.innerText || '';
+                        const patterns = [
+                            '검색 기준과 일치하는 광고가 없습니다',
+                            '일치하는 광고가 없습니다',
+                            'No ads match your selection',
+                            'No results found',
+                        ];
+                        return patterns.find(p => t.includes(p)) || null;
+                    }
+                """)
+                if no_results_post:
+                    print(f"  [META] {display_name}: 광고 0개 (no-results 감지 — post-scroll, status=ok)")
+                    return {
+                        "active_ad_count": 0,
+                        "active_ad_count_raw": "no_results",
+                        "visible_ad_count": 0,
+                        "creatives": [],
+                        "source_url": page.url,
+                        "status": "ok",
+                        "error": None,
+                    }
 
             status = "ok" if active_count is not None else "partial"
             print(

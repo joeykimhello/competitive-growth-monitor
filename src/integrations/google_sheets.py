@@ -397,6 +397,76 @@ def read_sheet_rows(tab_name: str) -> list[dict]:
         return []
 
 
+def read_sheet_headers(tab_name: str) -> list[str]:
+    """Read the header row from a sheet tab and return column name list.
+
+    Returns [] on error or if the tab is empty.
+    """
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    if not sheet_id or not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        return []
+    try:
+        service = _get_service()
+        result = (
+            service.spreadsheets()
+            .values()
+            .get(spreadsheetId=sheet_id, range=f"{tab_name}!1:1")
+            .execute()
+        )
+        rows = result.get("values", [])
+        return rows[0] if rows else []
+    except HttpError as exc:
+        print(
+            f"[google_sheets] read_sheet_headers API error {exc.status_code}: {exc.reason}",
+            file=sys.stderr,
+        )
+        return []
+    except Exception as exc:
+        print(f"[google_sheets] read_sheet_headers error: {exc}", file=sys.stderr)
+        return []
+
+
+def append_row_ordered(tab_name: str, headers: list[str], row: dict) -> bool:
+    """Append a row using an explicit header list for column ordering.
+
+    Unlike append_row, this uses the provided headers list instead of
+    sheet_schema.yaml. Use when the sheet has columns not in the schema.
+    """
+    values = ["" if row.get(col) is None else str(row[col]) for col in headers]
+
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    if not sheet_id:
+        print("[google_sheets] GOOGLE_SHEET_ID is not set.", file=sys.stderr)
+        return False
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        print("[google_sheets] GOOGLE_APPLICATION_CREDENTIALS is not set.", file=sys.stderr)
+        return False
+
+    try:
+        service = _get_service()
+        service.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range=f"{tab_name}!A1",
+            valueInputOption="RAW",
+            insertDataOption="INSERT_ROWS",
+            body={"values": [values]},
+        ).execute()
+        print(f"[google_sheets] append_row_ordered OK → tab='{tab_name}'")
+        return True
+    except FileNotFoundError as exc:
+        print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
+        return False
+    except HttpError as exc:
+        print(f"[google_sheets] Sheets API error {exc.status_code}: {exc.reason}", file=sys.stderr)
+        return False
+    except Exception as exc:
+        print(
+            f"[google_sheets] Unexpected error in append_row_ordered: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return False
+
+
 def read_last_row(tab: str) -> Optional[list[Any]]:
     """Return the last row of a tab, or None if the tab is empty."""
     sheet_id = os.environ["GOOGLE_SHEET_ID"]
@@ -409,3 +479,73 @@ def read_last_row(tab: str) -> Optional[list[Any]]:
     )
     values = result.get("values", [])
     return values[-1] if values else None
+
+
+def _ensure_tab_exists(service, spreadsheet_id: str, tab_name: str) -> None:
+    """Create the tab if it doesn't already exist."""
+    try:
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={"requests": [{"addSheet": {"properties": {"title": tab_name}}}]},
+        ).execute()
+        print(f"[google_sheets] Created new tab '{tab_name}'")
+    except HttpError as exc:
+        if exc.status_code != 400:  # 400 = tab already exists — ok
+            raise
+
+
+def overwrite_sheet_tab(tab_name: str, headers: list[str], rows: list[list[Any]]) -> bool:
+    """Clear a sheet tab and write header + data rows from scratch.
+
+    Creates the tab if it does not exist. Does not use sheet_schema.yaml;
+    callers supply headers directly. Used by build_dashboard_views to fully
+    rebuild dashboard_* aggregate tabs on each run.
+
+    Args:
+        tab_name: Sheet tab title (will be created if missing).
+        headers:  List of column header strings.
+        rows:     List of data rows — each a list of values in header order.
+
+    Returns:
+        True on success, False on any error (details printed to stderr).
+    """
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    if not sheet_id:
+        print("[google_sheets] GOOGLE_SHEET_ID is not set.", file=sys.stderr)
+        return False
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        print("[google_sheets] GOOGLE_APPLICATION_CREDENTIALS is not set.", file=sys.stderr)
+        return False
+    try:
+        service = _get_service()
+        _ensure_tab_exists(service, sheet_id, tab_name)
+        service.spreadsheets().values().clear(
+            spreadsheetId=sheet_id,
+            range=f"{tab_name}!A:Z",
+        ).execute()
+        all_data: list[list] = [headers] + [
+            ["" if v is None else str(v) for v in row] for row in rows
+        ]
+        service.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range=f"{tab_name}!A1",
+            valueInputOption="RAW",
+            body={"values": all_data},
+        ).execute()
+        print(f"[google_sheets] overwrite_sheet_tab OK → tab='{tab_name}' rows={len(rows)}")
+        return True
+    except FileNotFoundError as exc:
+        print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
+        return False
+    except HttpError as exc:
+        print(
+            f"[google_sheets] overwrite_sheet_tab API error {exc.status_code}: {exc.reason}",
+            file=sys.stderr,
+        )
+        return False
+    except Exception as exc:
+        print(
+            f"[google_sheets] overwrite_sheet_tab error: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return False

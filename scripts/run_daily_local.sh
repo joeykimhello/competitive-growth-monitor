@@ -29,5 +29,7 @@ log() { echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"; }
 log "=== run_daily_local start ==="
 python -m src.jobs.run_daily
 RC=$?
+log "=== run_daily 완료 (exit=$RC) ==="
+
 log "=== run_daily_local done (exit=$RC) ==="
 exit $RC

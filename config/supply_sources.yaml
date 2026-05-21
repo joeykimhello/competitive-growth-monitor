@@ -52,3 +52,22 @@ supply_sources:
         metric_name: house_count
         collection_method: map_view_estimate
         confidence: medium
+
+  33m2:
+    display_name: 삼삼엠투
+    collector: 33m2
+    regions:
+      nationwide:
+        label: nationwide
+        url: "https://web.33m2.co.kr/guest/room"
+        source: 33m2_web
+        metric_name: room_count
+        collection_method: search_result_sum_by_type
+        confidence: high
+      seoul:
+        label: Seoul
+        url: "https://web.33m2.co.kr/guest/room?keyword=%EC%84%9C%EC%9A%B8"
+        source: 33m2_web
+        metric_name: room_count
+        collection_method: search_result_sum_by_type
+        confidence: high

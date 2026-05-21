@@ -67,8 +67,10 @@ _SUPPLY_DISPLAY = {
     ("liveanywhere", "seoul"):      ("리브애니웨어", "서울"),
     ("liveanywhere", "nationwide"): ("리브애니웨어", "국내"),
     ("encostay",     "nationwide"): ("엔코스테이",   "국내"),
+    ("33m2",         "nationwide"): ("삼삼엠투",     "국내"),
+    ("33m2",         "seoul"):      ("삼삼엠투",     "서울"),
 }
-_SUPPLY_ORDER = ["Airbnb", "리브애니웨어", "엔코스테이"]
+_SUPPLY_ORDER = ["Airbnb", "리브애니웨어", "엔코스테이", "삼삼엠투"]
 
 
 def _get_previous_meta_counts(today: str) -> dict:
@@ -116,9 +118,8 @@ def _build_summary(
         "*[Meta 광고]*",
     ]
 
-    # Index meta_ad_start_dates results by competitor key.
+    # ── [Meta 광고] — always shown ───────────────────────────────────────────
     # displayed_meta_count = page header count (e.g. "결과 ~80개" → 80)
-    # written = rows actually appended to meta_ad_start_dates this run
     meta_by_key = {r.get("competitor"): r for r in meta_ad_stats.get("results", [])}
     for comp_key, display_name in _META_ORDER:
         r = meta_by_key.get(comp_key)
@@ -130,12 +131,16 @@ def _build_summary(
                 f" previous_date=N/A previous_count=N/A delta=N/A delta_label=N/A"
             )
         else:
-            count = r.get("displayed_meta_count")  # page-header count, not written row count
-            prev_info = prev_meta_counts.get(comp_key)  # {"date": str, "count": int} or None
+            count = r.get("displayed_meta_count")
+            prev_info = prev_meta_counts.get(comp_key)
             prev = prev_info["count"] if prev_info else None
             prev_date = prev_info["date"] if prev_info else None
 
-            if count is not None and prev is not None:
+            if count == 0:
+                delta = (count - prev) if prev is not None else None
+                delta_str = f"(-{prev}개)" if prev else ""
+                meta_str = f"광고 없음{delta_str}"
+            elif count is not None and prev is not None:
                 delta = count - prev
                 delta_str = f"(+{delta}개)" if delta > 0 else (f"({delta}개)" if delta < 0 else "(0개)")
                 meta_str = f"{count}개{delta_str}"
@@ -158,7 +163,7 @@ def _build_summary(
             )
         lines.append(f"• {display_name}: {meta_str}")
 
-    # ── [Meta 30일 초과 광고] ────────────────────────────────────────────────
+    # ── [Meta 30일 초과 광고] — always shown ─────────────────────────────────
     lines += ["", "*[Meta 30일 초과 광고]*"]
     for comp_key, display_name in _META_ORDER:
         r = meta_by_key.get(comp_key)
@@ -168,7 +173,7 @@ def _build_summary(
             long_count = r.get("long_running_count", 0)
             lines.append(f"• {display_name}: {long_count}개")
 
-    # ── [공개방 수] ──────────────────────────────────────────────────────────
+    # ── [공개방 수] — always shown ───────────────────────────────────────────
     lines += ["", "*[공개방 수]*"]
 
     grouped: dict[str, list[str]] = {}
@@ -195,72 +200,76 @@ def _build_summary(
         if entries:
             lines.append(f"• {display_comp}: {', '.join(entries)}")
 
-    # ── [정책/공지] ──────────────────────────────────────────────────────────
-    lines += ["", "*[정책/공지]*"]
-
-    # Keep only the first result per competitor (one page per competitor)
-    policy_by_key: dict[str, dict] = {}
+    # ── [정책/공지] — only shown when is_new or is_changed exists ────────────
+    # Collect all changed pages grouped by competitor key
+    policy_changed: dict[str, list[dict]] = {}
     for r in policy_stats.get("results", []):
-        comp = r.get("competitor", "")
-        if comp not in policy_by_key:
-            policy_by_key[comp] = r
+        if r.get("is_new") or r.get("is_changed"):
+            comp = r.get("competitor", "")
+            policy_changed.setdefault(comp, []).append(r)
 
-    for comp_key, display_name in _POLICY_ORDER:
-        r = policy_by_key.get(comp_key)
-        if r is None:
-            lines.append(f"• {display_name}: 수집 실패")
-            continue
-        status = r.get("status", "failed")
-        if status == "ok" and r.get("is_new"):
-            lines.append(f"• {display_name}: 신규")
-        elif status == "ok" and r.get("is_changed"):
-            lines.append(f"• {display_name}: 변경됨")
-        elif status == "ok":
-            lines.append(f"• {display_name}: 변경 없음")
-        else:
-            lines.append(f"• {display_name}: 수집 실패")
+    if policy_changed:
+        lines += ["", "*[정책/공지]*"]
+        for comp_key, display_name in _POLICY_ORDER:
+            changed_pages = policy_changed.get(comp_key)
+            if not changed_pages:
+                continue
+            for r in changed_pages:
+                change_type = "새 공지" if r.get("is_new") else "변경됨"
+                title = r.get("title", "")
+                lines.append(f"• {display_name}: {change_type}")
+                if title:
+                    lines.append(f"  - {title}")
 
-    # ── [앱 업데이트] ────────────────────────────────────────────────────────
-    lines += ["", "*[앱 업데이트]*"]
+    # ── [앱 업데이트] — only shown when is_changed=True exists ───────────────
+    app_changed_set: set[tuple] = set()
     if app_stats:
-        app_results = app_stats.get("results", [])
+        for r in app_stats.get("results", []):
+            if r.get("is_changed"):
+                app_changed_set.add((r.get("competitor"), r.get("platform")))
+
+    if app_changed_set:
+        lines += ["", "*[앱 업데이트]*"]
         app_by_key: dict = {}
-        for r in app_results:
+        for r in (app_stats or {}).get("results", []):
             app_by_key[(r.get("competitor"), r.get("platform"))] = r
 
         for comp_key, display_name in _APP_ORDER:
             for platform in ("ios", "android"):
+                if (comp_key, platform) not in app_changed_set:
+                    continue
                 r = app_by_key.get((comp_key, platform))
                 if r is None:
                     continue
                 plat_label = "iOS" if platform == "ios" else "Android"
-                status = r.get("status", "failed")
                 ver = r.get("version", "")
-                ver_str = f"v{ver}" if ver else "v없음"
+                ver_str = ver if ver else "버전 없음"
                 change_ko = r.get("change_summary_ko", "")
+                lines.append(f"• {display_name} {plat_label}: {ver_str}")
+                if change_ko:
+                    lines.append(f"  - {change_ko}")
 
-                if status == "failed":
-                    state_str = "수집 실패"
-                elif status == "not_found":
-                    state_str = "앱 없음"
-                elif status == "partial":
-                    if r.get("is_new_version"):
-                        state_str = f"부분 수집 / 업데이트 감지 - {change_ko}" if change_ko else "부분 수집 / 업데이트 감지"
-                    elif r.get("is_changed"):
-                        state_str = f"부분 수집 / 변경 감지 - {change_ko}" if change_ko else "부분 수집 / 변경 감지"
-                    else:
-                        state_str = "부분 수집 / 변경 없음"
-                else:  # ok
-                    if r.get("is_new_version"):
-                        state_str = f"업데이트 감지 - {change_ko}" if change_ko else "업데이트 감지"
-                    elif r.get("is_changed"):
-                        state_str = f"변경 감지 - {change_ko}" if change_ko else "변경 감지"
-                    else:
-                        state_str = "변경 없음"
+    # ── [앱 설명 변경] — only shown when is_description_changed=True exists ─────
+    desc_changed_set: set[tuple] = set()
+    if app_stats:
+        for r in app_stats.get("results", []):
+            if r.get("is_description_changed"):
+                desc_changed_set.add((r.get("competitor"), r.get("platform")))
 
-                lines.append(f"• {display_name} {plat_label}: {ver_str} / {state_str}")
-    else:
-        lines.append("• 앱 수집 미실행")
+    if desc_changed_set:
+        lines += ["", "*[앱 설명 변경]*"]
+        app_by_key_desc: dict = {}
+        for r in (app_stats or {}).get("results", []):
+            app_by_key_desc[(r.get("competitor"), r.get("platform"))] = r
+        for comp_key, display_name in _APP_ORDER:
+            for platform in ("ios", "android"):
+                if (comp_key, platform) not in desc_changed_set:
+                    continue
+                r = app_by_key_desc.get((comp_key, platform))
+                if r is None:
+                    continue
+                plat_label = "iOS" if platform == "ios" else "Android"
+                lines.append(f"• {display_name} {plat_label}: 설명 변경")
 
     total_failed = (
         meta_ad_stats.get("failed", 0)

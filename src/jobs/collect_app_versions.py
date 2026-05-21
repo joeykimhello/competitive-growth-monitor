@@ -24,6 +24,7 @@ Returns stats dict for run_daily.py: {checked, failed, results}
 """
 
 import argparse
+import hashlib
 import sys
 import time
 from datetime import datetime, timezone
@@ -35,13 +36,25 @@ from dotenv import load_dotenv
 
 from src.collectors.apps import itunes_lookup
 from src.collectors.apps import google_play
-from src.integrations.google_sheets import append_row, ensure_headers, read_sheet_rows
+from src.integrations.google_sheets import (
+    append_row,
+    append_row_ordered,
+    ensure_headers,
+    read_sheet_headers,
+    read_sheet_rows,
+)
 
 load_dotenv()
 
 _CONFIG_PATH = Path(__file__).parents[2] / "config" / "app_sources.yaml"
 _TAB = "app_versions"
 _REQUEST_DELAY_SEC = 2
+_DESCRIPTION_COLUMNS = [
+    "app_description",
+    "app_description_hash",
+    "is_description_changed",
+    "description_change_summary_ko",
+]
 
 
 def _load_config() -> dict:
@@ -59,6 +72,31 @@ def _load_previous_map() -> dict:
         if comp and plat and row.get("status") == "ok":
             previous[(comp, plat)] = row  # later rows overwrite earlier → last wins
     return previous
+
+
+def _hash_description(text: str) -> str:
+    normalized = " ".join(text.lower().split())
+    return hashlib.sha256(normalized.encode()).hexdigest()[:16]
+
+
+def _compute_description_change(
+    app_desc: str, prev: Optional[dict]
+) -> Tuple[bool, str, str]:
+    """Return (is_description_changed, description_hash, description_change_summary_ko).
+
+    Returns (False, "", "") when app_desc is empty (extraction not available).
+    """
+    if not app_desc:
+        return False, "", ""
+
+    desc_hash = _hash_description(app_desc)
+    prev_hash = (prev or {}).get("app_description_hash", "")
+
+    if not prev_hash:
+        return False, desc_hash, "기준 스냅샷 저장"
+    if desc_hash != prev_hash:
+        return True, desc_hash, "앱 설명 변경 감지"
+    return False, desc_hash, ""
 
 
 def _compute_change(result: dict, prev: Optional[dict]) -> Tuple[bool, bool, str]:
@@ -119,6 +157,22 @@ def run(
     checked_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     ensure_headers(_TAB)
+
+    # Read actual sheet headers for column-name-based writes (includes manually-added columns)
+    actual_headers = read_sheet_headers(_TAB)
+    if actual_headers:
+        missing_desc = [c for c in _DESCRIPTION_COLUMNS if c not in actual_headers]
+        if missing_desc:
+            print(
+                f"[WARN] app_versions 시트에 설명 컬럼 누락: {missing_desc}. "
+                f"Google Sheet app_versions 탭에 수동으로 추가해주세요.",
+                file=sys.stderr,
+            )
+        has_desc_columns = not missing_desc
+    else:
+        print("[WARN] app_versions 헤더 읽기 실패 — 스키마 기반으로 폴백합니다.", file=sys.stderr)
+        has_desc_columns = False
+
     previous_map = _load_previous_map()
 
     checked = 0
@@ -148,6 +202,13 @@ def run(
             else:
                 is_new_version, is_changed, change_summary_ko = False, False, ""
 
+            app_desc = result.get("description", "") if status == "ok" else ""
+            is_desc_changed, desc_hash, desc_change_ko = (
+                _compute_description_change(app_desc, prev)
+                if has_desc_columns
+                else (False, "", "")
+            )
+
             row = {
                 "date": today,
                 "checked_at": checked_at,
@@ -165,8 +226,17 @@ def run(
                 "change_summary_ko": change_summary_ko,
                 "status": status,
                 "error_message": result.get("error", "") or "",
+                "app_description": app_desc,
+                "app_description_hash": desc_hash,
+                "is_description_changed": "TRUE" if is_desc_changed else "FALSE",
+                "description_change_summary_ko": desc_change_ko,
             }
-            if append_row(_TAB, row):
+            wrote_ok = (
+                append_row_ordered(_TAB, actual_headers, row)
+                if actual_headers
+                else append_row(_TAB, row)
+            )
+            if wrote_ok:
                 if status == "failed":
                     failed += 1
                 else:
@@ -175,6 +245,7 @@ def run(
                 print(
                     f"  [APP] iOS {display_name}: status={status}"
                     f" version={version_str!r} is_new={is_new_version} change={change_summary_ko!r}"
+                    f" desc_changed={is_desc_changed}"
                 )
             else:
                 print(f"  [WARN] Sheet write failed {competitor_key}/ios", file=sys.stderr)
@@ -188,6 +259,8 @@ def run(
                 "is_new_version": is_new_version,
                 "is_changed": is_changed,
                 "change_summary_ko": change_summary_ko,
+                "is_description_changed": is_desc_changed,
+                "description_change_summary_ko": desc_change_ko,
             })
             time.sleep(_REQUEST_DELAY_SEC)
 
@@ -201,6 +274,13 @@ def run(
                 is_new_version, is_changed, change_summary_ko = _compute_change(result, prev)
             else:
                 is_new_version, is_changed, change_summary_ko = False, False, ""
+
+            app_desc = result.get("app_description", "") if status == "ok" else ""
+            is_desc_changed, desc_hash, desc_change_ko = (
+                _compute_description_change(app_desc, prev)
+                if has_desc_columns
+                else (False, "", "")
+            )
 
             row = {
                 "date": today,
@@ -219,8 +299,17 @@ def run(
                 "change_summary_ko": change_summary_ko,
                 "status": status,
                 "error_message": result.get("error", "") or "",
+                "app_description": app_desc,
+                "app_description_hash": desc_hash,
+                "is_description_changed": "TRUE" if is_desc_changed else "FALSE",
+                "description_change_summary_ko": desc_change_ko,
             }
-            if append_row(_TAB, row):
+            wrote_ok = (
+                append_row_ordered(_TAB, actual_headers, row)
+                if actual_headers
+                else append_row(_TAB, row)
+            )
+            if wrote_ok:
                 if status == "failed":
                     failed += 1
                 else:
@@ -229,6 +318,7 @@ def run(
                 print(
                     f"  [APP] Android {display_name}: status={status}"
                     f" version={version_str!r} is_new={is_new_version} change={change_summary_ko!r}"
+                    f" desc_changed={is_desc_changed}"
                 )
             else:
                 print(f"  [WARN] Sheet write failed {competitor_key}/android", file=sys.stderr)
@@ -242,6 +332,8 @@ def run(
                 "is_new_version": is_new_version,
                 "is_changed": is_changed,
                 "change_summary_ko": change_summary_ko,
+                "is_description_changed": is_desc_changed,
+                "description_change_summary_ko": desc_change_ko,
             })
             time.sleep(_REQUEST_DELAY_SEC)
 

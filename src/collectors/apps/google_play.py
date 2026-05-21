@@ -80,13 +80,11 @@ async def _extract_app_name(page: Page) -> str:
 async def _extract_release_notes(page: Page) -> Tuple[str, bool]:
     """Return (release_notes, section_found).
 
-    Tries to expand "더보기" in the "새로운 기능" section before extracting.
+    Primary:  <div itemprop="description"> — tag-based, mirrors _extract_app_name.
+    Fallback: regex on page innerText after "새로운 기능" heading.
+    "더보기" is expanded before reading in both paths.
     """
-    page_text = (await page.evaluate("document.body.innerText") or "")
-    if "새로운 기능" not in page_text:
-        return "", False
-
-    # Expand truncated notes if a "더보기" button is visible
+    # Expand truncated notes ("더보기") before querying the tag
     for btn_selector in [
         'button:has-text("더보기")',
         'button:has-text("더 보기")',
@@ -98,12 +96,27 @@ async def _extract_release_notes(page: Page) -> Tuple[str, bool]:
             if await btn.count() > 0 and await btn.is_visible():
                 await btn.click()
                 await page.wait_for_timeout(600)
-                page_text = (await page.evaluate("document.body.innerText") or "")
                 break
         except Exception:
             pass
 
-    # Extract content between "새로운 기능" and the next major section / UI element
+    # Primary: <div itemprop="description"> (same approach as h1[itemprop="name"])
+    try:
+        el = await page.query_selector('div[itemprop="description"]')
+        if el:
+            notes = (await el.inner_text()).strip()
+            if notes:
+                notes = re.sub(r'\nflag\s*$', '', notes).strip()
+                print(f"  [PLAY] release_notes via itemprop=description")
+                return notes, True
+    except Exception:
+        pass
+
+    # Fallback: regex from page innerText
+    page_text = (await page.evaluate("document.body.innerText") or "")
+    if "새로운 기능" not in page_text:
+        return "", False
+
     m = re.search(
         r'새로운\s*기능\s*\n([\s\S]{1,1000}?)'
         r'(?='
@@ -118,7 +131,6 @@ async def _extract_release_notes(page: Page) -> Tuple[str, bool]:
     )
     if m:
         notes = m.group(1).strip()
-        # Strip residual button text and Material icon names (e.g. "flag", "expand_more")
         notes = re.sub(r'\n?더\s*보기\s*$', '', notes).strip()
         notes = re.sub(r'\nflag\s*$', '', notes).strip()
         return notes, True
@@ -225,6 +237,27 @@ async def _extract_from_popup(page: Page) -> Tuple[str, str, str]:
     return version, release_date, popup_text
 
 
+def _extract_description_from_popup_text(popup_text: str) -> str:
+    """Extract app description from popup_text, stopping before metadata section."""
+    text = popup_text
+    # Strip common dialog header artifacts (close/clear button text)
+    text = re.sub(r'^(close|clear|닫기|앱\s*정보)\s*\n+', '', text, flags=re.IGNORECASE).strip()
+    # Cut at first metadata label
+    for pattern in [
+        r'\n버전\s*\n',
+        r'\n업데이트\s*날짜\s*\n',
+        r'\n필요한\s*Android',
+        r'\n다운로드',
+        r'\n개발자\b',
+        r'\n앱\s*지원',
+        r'\n출시일',
+    ]:
+        m = re.search(pattern, text)
+        if m:
+            text = text[:m.start()].strip()
+    return text
+
+
 async def collect(package_id: str, save_snapshot: bool = True) -> dict:
     """Return version info for an Android app from the public Play Store page."""
     source_url = (
@@ -235,6 +268,7 @@ async def collect(package_id: str, save_snapshot: bool = True) -> dict:
         "version": "",
         "release_date": "",
         "release_notes": "",
+        "app_description": "",
         "source_url": source_url,
         "status": "failed",
         "error": None,
@@ -317,10 +351,16 @@ async def collect(package_id: str, save_snapshot: bool = True) -> dict:
 
             version = ""
             release_date = ""
+            app_description = ""
 
             if popup_opened:
                 version, release_date, popup_text = await _extract_from_popup(page)
                 print(f"  [PLAY] 팝업 visible text 앞 1000자: {popup_text[:1000]!r}")
+                try:
+                    app_description = _extract_description_from_popup_text(popup_text)
+                    print(f"  [PLAY] app_description 앞 200자: {app_description[:200]!r}")
+                except Exception as exc:
+                    print(f"  [PLAY] app_description 추출 실패: {exc}", file=sys.stderr)
 
                 if save_snapshot:
                     html2, png2 = _snapshot_paths(package_id, suffix="__popup")
@@ -354,6 +394,7 @@ async def collect(package_id: str, save_snapshot: bool = True) -> dict:
                 "version": version,
                 "release_date": release_date,
                 "release_notes": release_notes,
+                "app_description": app_description,
                 "source_url": source_url,
                 "status": status,
                 "error": None if status in ("ok", "partial") else base.get("error"),
