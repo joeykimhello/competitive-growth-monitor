@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>경쟁사 모니터링 — 로컬 설치 가이드 (Windows)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   THEME: BOLD SIGNAL (dark · electric blue)
+═══════════════════════════════════════ */
+:root {
+  --bg:       #111111;
+  --bg2:      #1a1a2e;
+  --surface:  rgba(255,255,255,0.04);
+  --border:   rgba(255,255,255,0.07);
+  --accent:   #4A6CF7;
+  --green:    #34D399;
+  --purple:   #A78BFA;
+  --warn:     #FCD34D;
+  --red:      #F87171;
+  --txt:      #ffffff;
+  --txt2:     rgba(255,255,255,0.62);
+  --txt3:     rgba(255,255,255,0.32);
+  --font-d:   'Archivo Black', sans-serif;
+  --font-b:   'Space Grotesk', sans-serif;
+  --ease:     cubic-bezier(0.16, 1, 0.3, 1);
+  --t1: clamp(2rem,   5.5vw, 4.2rem);
+  --t2: clamp(1.4rem, 3.2vw, 2.6rem);
+  --t3: clamp(1rem,   2vw,   1.5rem);
+  --tb: clamp(0.78rem,1.25vw,1rem);
+  --ts: clamp(0.65rem,1vw,   0.85rem);
+  --tl: clamp(0.58rem,0.85vw,0.72rem);
+  --tn: clamp(2.5rem, 7vw,   6rem);
+  --p:  clamp(1.2rem, 3.5vw, 3.2rem);
+  --g:  clamp(0.6rem, 1.5vw, 1.4rem);
+  --ge: clamp(0.35rem,0.8vw, 0.7rem);
+}
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; overflow-x:hidden; }
+html { scroll-snap-type:y mandatory; scroll-behavior:smooth; }
+body { font-family:var(--font-b); background:var(--bg); color:var(--txt); overflow-x:hidden; }
+
+.slide {
+  width:100vw; height:100vh; height:100dvh;
+  overflow:hidden; scroll-snap-align:start;
+  display:flex; flex-direction:column; position:relative;
+  background: linear-gradient(135deg,#111111 0%,#1a1a2e 50%,#111111 100%);
+}
+.slide::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px);
+  background-size:56px 56px;
+}
+.slide-inner {
+  flex:1; display:flex; flex-direction:column;
+  padding:var(--p); position:relative; z-index:1; overflow:hidden;
+}
+.sn {
+  position:absolute; top:calc(var(--p)*0.4); left:var(--p);
+  font-family:var(--font-d); font-size:var(--tn);
+  color:rgba(255,255,255,0.05); line-height:1;
+  letter-spacing:-0.04em; pointer-events:none; user-select:none;
+}
+.bc {
+  position:absolute; top:var(--p); right:var(--p);
+  display:flex; gap:5px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+}
+.bc-item {
+  font-size:var(--tl); font-weight:700; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--txt3);
+  padding:3px 8px; border-radius:3px;
+  transition:color .3s, background .3s;
+}
+.bc-item.on { color:var(--txt); background:var(--accent); }
+
+.content {
+  flex:1; display:flex; flex-direction:column;
+  justify-content:center; gap:var(--g);
+  padding-top:clamp(2rem,6vh,4.5rem); overflow:hidden;
+}
+
+.lbl {
+  font-size:var(--tl); font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--accent);
+}
+.lbl.g { color:var(--green); }
+.lbl.w { color:var(--warn);  }
+h1 { font-family:var(--font-d); font-size:var(--t1); line-height:1.1; letter-spacing:-.02em; }
+h2 { font-family:var(--font-d); font-size:var(--t2); line-height:1.15; letter-spacing:-.02em; }
+h3 { font-family:var(--font-b); font-size:var(--t3); font-weight:700; line-height:1.3; }
+p  { font-size:var(--tb); line-height:1.65; color:var(--txt2); }
+code {
+  font-family:'JetBrains Mono','Courier New',monospace;
+  background:rgba(255,255,255,0.07); padding:1px 5px;
+  border-radius:3px; font-size:.9em;
+}
+
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:clamp(.7rem,1.4vw,1.3rem);
+}
+.card.b { border-color:rgba(74,108,247,.35); }
+.card.g { border-color:rgba(52,211,153,.35); }
+.card.p { border-color:rgba(167,139,250,.35); }
+.card.w { border-color:rgba(252,211,77,.35);  }
+.card.r { border-color:rgba(248,113,113,.35); }
+
+.g2 { display:grid; grid-template-columns:1fr 1fr;         gap:var(--ge); }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr;     gap:var(--ge); }
+.gs { display:grid; grid-template-columns:1.3fr .7fr;      gap:var(--g);  }
+.gm { display:grid; grid-template-columns:1fr 1.4fr;       gap:var(--g);  }
+
+.badge {
+  display:inline-flex; align-items:center;
+  font-size:var(--tl); font-weight:700;
+  padding:2px 7px; border-radius:4px; letter-spacing:.04em;
+}
+.bk { background:rgba(74,108,247,.18); color:#818CF8; }
+.bg { background:rgba(52,211,153,.16); color:#34D399;  }
+.bp { background:rgba(167,139,250,.16);color:#A78BFA;  }
+.bw { background:rgba(252,211,77,.16); color:#FCD34D;  }
+.bo { background:rgba(255,255,255,.07);color:var(--txt3); }
+.br { background:rgba(248,113,113,.16);color:#F87171;  }
+
+.tbl { width:100%; border-collapse:collapse; font-size:var(--ts); }
+.tbl thead th {
+  text-align:left; padding:clamp(5px,.8vh,9px) clamp(6px,.8vw,11px);
+  color:var(--accent); font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; font-size:calc(var(--ts)*.88);
+  border-bottom:1px solid var(--border);
+}
+.tbl tbody td {
+  padding:clamp(5px,.8vh,9px) clamp(6px,.8vw,11px);
+  border-bottom:1px solid rgba(255,255,255,.035);
+  color:var(--txt2); vertical-align:middle;
+}
+.tbl tbody tr:hover td { background:rgba(255,255,255,.025); }
+
+.tl { display:flex; flex-direction:column; gap:var(--ge); }
+.tl-row { display:flex; gap:clamp(10px,1.5vw,16px); align-items:flex-start; }
+.dot { width:clamp(8px,.9vw,11px); height:clamp(8px,.9vw,11px); border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:4px; }
+.dot.g { background:var(--green); }
+.dot.w { background:var(--warn);  }
+.dot.r { background:var(--red);   }
+.tl-txt { font-size:var(--tb); color:var(--txt2); line-height:1.5; }
+.tl-txt strong { color:var(--txt); }
+
+.term {
+  background:#0d1117; border:1px solid rgba(255,255,255,.08);
+  border-radius:10px; padding:clamp(9px,1.4vw,16px) clamp(11px,1.7vw,18px);
+  font-family:'JetBrains Mono','Courier New',monospace;
+  font-size:var(--ts); line-height:1.72; overflow:hidden;
+}
+.term .b  { color:#fff; font-weight:700; }
+.term .d  { color:rgba(255,255,255,.38); }
+.term .up { color:#34D399; }
+.term .dn { color:#F87171; }
+.term .nw { color:#FCD34D; }
+.term .bl { color:#818CF8; }
+.term .cm { color:rgba(255,255,255,.32); font-style:italic; }
+
+.stat { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:clamp(8px,1.4vh,14px); text-align:center; }
+.stat-n { font-family:var(--font-d); font-size:clamp(1.8rem,3.5vw,3rem); line-height:1; color:var(--txt); }
+.stat-l { font-size:var(--ts); color:var(--txt2); margin-top:4px; }
+
+.step-n {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:clamp(22px,2.5vw,32px); height:clamp(22px,2.5vw,32px);
+  border-radius:50%; background:var(--accent);
+  font-family:var(--font-d); font-size:var(--ts); color:#fff;
+  flex-shrink:0;
+}
+.step-row { display:flex; gap:clamp(8px,1.2vw,14px); align-items:flex-start; }
+.step-body { font-size:var(--tb); color:var(--txt2); line-height:1.55; }
+.step-body strong { color:var(--txt); }
+
+.warn-box {
+  display:flex; gap:clamp(8px,1vw,12px); align-items:flex-start;
+  background:rgba(252,211,77,.06); border:1px solid rgba(252,211,77,.25);
+  border-radius:8px; padding:clamp(8px,1.2vh,13px) clamp(10px,1.4vw,16px);
+}
+.warn-box .icon { font-size:clamp(1rem,1.6vw,1.3rem); flex-shrink:0; line-height:1.4; }
+.warn-box p { font-size:var(--ts); color:rgba(252,211,77,.85); line-height:1.55; }
+
+.ok-box {
+  display:flex; gap:clamp(8px,1vw,12px); align-items:flex-start;
+  background:rgba(52,211,153,.06); border:1px solid rgba(52,211,153,.25);
+  border-radius:8px; padding:clamp(8px,1.2vh,13px) clamp(10px,1.4vw,16px);
+}
+.ok-box .icon { font-size:clamp(1rem,1.6vw,1.3rem); flex-shrink:0; line-height:1.4; }
+.ok-box p { font-size:var(--ts); color:rgba(52,211,153,.85); line-height:1.55; }
+
+.err-box {
+  display:flex; gap:clamp(8px,1vw,12px); align-items:flex-start;
+  background:rgba(248,113,113,.06); border:1px solid rgba(248,113,113,.25);
+  border-radius:8px; padding:clamp(8px,1.2vh,13px) clamp(10px,1.4vw,16px);
+}
+.err-box .icon { font-size:clamp(1rem,1.6vw,1.3rem); flex-shrink:0; line-height:1.4; }
+.err-box p { font-size:var(--ts); color:rgba(248,113,113,.85); line-height:1.55; }
+
+hr { border:none; border-top:1px solid var(--border); }
+
+.rev {
+  opacity:0; transform:translateY(26px);
+  transition:opacity .65s var(--ease), transform .65s var(--ease);
+}
+.slide.vis .rev              { opacity:1; transform:translateY(0); }
+.slide.vis .rev:nth-child(1) { transition-delay:.05s; }
+.slide.vis .rev:nth-child(2) { transition-delay:.12s; }
+.slide.vis .rev:nth-child(3) { transition-delay:.19s; }
+.slide.vis .rev:nth-child(4) { transition-delay:.26s; }
+.slide.vis .rev:nth-child(5) { transition-delay:.33s; }
+.slide.vis .rev:nth-child(6) { transition-delay:.40s; }
+.slide.vis .rev:nth-child(7) { transition-delay:.47s; }
+
+#prog {
+  position:fixed; top:0; left:0; height:3px;
+  background:var(--accent); width:0%; z-index:1000;
+  transition:width .35s ease;
+}
+#dots {
+  position:fixed; right:clamp(7px,1.2vw,15px); top:50%;
+  transform:translateY(-50%); display:flex;
+  flex-direction:column; gap:6px; z-index:1000;
+}
+.nd {
+  width:6px; height:6px; border-radius:50%;
+  background:rgba(255,255,255,.18); cursor:pointer;
+  border:none; padding:0; transition:all .3s ease;
+}
+.nd.on  { background:var(--accent); transform:scale(1.45); }
+.nd:hover { background:rgba(255,255,255,.5); }
+
+@media(max-height:700px){
+  :root{ --p:clamp(.8rem,2.5vw,2rem); --g:clamp(.4rem,1.2vw,.9rem); }
+}
+@media(max-height:600px){ #dots,.sn{ display:none; } }
+@media(max-width:600px){
+  .g2,.g3,.gs,.gm{ grid-template-columns:1fr; }
+  .bc{ display:none; }
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.01ms!important; transition-duration:.2s!important; }
+  html{ scroll-behavior:auto; }
+}
+</style>
+</head>
+<body>
+
+<div id="prog"></div>
+<nav id="dots"></nav>
+
+<!-- ══ 01 COVER ══════════════════════════════════════════════════════ -->
+<section class="slide" id="s0">
+  <div class="sn">01</div>
+  <div class="bc">
+    <span class="bc-item on">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner" style="justify-content:center">
+    <div style="max-width:min(90vw,760px)">
+      <div class="lbl rev">로컬 설치 가이드</div>
+      <h1 class="rev" style="margin:clamp(.35rem,1.2vh,.9rem) 0">
+        경쟁사 모니터링 시스템<br>
+        <span style="color:var(--accent)">로컬 수동 실행 가이드</span>
+      </h1>
+      <p class="rev" style="max-width:560px;margin-bottom:var(--g)">
+        새 Windows 컴퓨터에서 Python 환경을 세팅하고<br>
+        <strong style="color:var(--green)">Google Sheet + Google Chat까지</strong> 정상 동작하게 만드는 완전한 가이드.
+      </p>
+      <div class="rev" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:var(--ge)">
+        <span class="badge bk">Windows 기준</span>
+        <span class="badge bk">PowerShell</span>
+        <span class="badge bk">Python 3.11+</span>
+        <span class="badge bw">7단계 · 약 30분</span>
+      </div>
+      <div class="rev ok-box" style="max-width:560px">
+        <div class="icon">💡</div>
+        <p>목표: GitHub Actions 없이 <strong>내 Windows 컴퓨터에서 직접</strong> 실행해서 Google Sheet와 Google Chat이 동작하는 것을 확인한다.</p>
+      </div>
+    </div>
+    <div style="position:absolute;right:var(--p);bottom:var(--p);
+                width:clamp(120px,22vw,240px);height:clamp(120px,22vw,240px);
+                background:var(--accent);border-radius:50%;opacity:.06;
+                filter:blur(50px);pointer-events:none"></div>
+  </div>
+</section>
+
+<!-- ══ 02 뭘 수집하나요? ═══════════════════════════════════════════════ -->
+<section class="slide" id="s1">
+  <div class="sn">02</div>
+  <div class="bc">
+    <span class="bc-item on">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">시스템 개요</div>
+        <h2 class="rev">뭘 수집하나요?</h2>
+      </div>
+      <div class="rev" style="flex:1;display:grid;grid-template-columns:1.1fr 0.9fr;gap:var(--g);min-height:0">
+        <!-- 좌: 수집항목 테이블 -->
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>수집 항목</th>
+                <th>저장 탭</th>
+                <th>Chat 표시</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong style="color:var(--txt)">Meta 광고</strong></td><td><code>meta_ad_counts</code></td><td>항상</td></tr>
+              <tr><td><strong style="color:var(--txt)">Meta 30일 초과</strong></td><td><code>meta_ad_start_dates</code></td><td>항상</td></tr>
+              <tr><td><strong style="color:var(--txt)">공개방 수</strong></td><td><code>raw_supply_snapshots</code></td><td>항상</td></tr>
+              <tr><td><strong style="color:var(--txt)">정책/공지 변경</strong></td><td><code>policy_updates</code></td><td>변경 시만</td></tr>
+              <tr><td><strong style="color:var(--txt)">앱 버전 업데이트</strong></td><td><code>app_versions</code></td><td>변경 시만</td></tr>
+              <tr><td><strong style="color:var(--txt)">앱 설명 변경</strong></td><td><code>app_versions</code></td><td>변경 시만</td></tr>
+            </tbody>
+          </table>
+          <div class="ok-box">
+            <div class="icon">📊</div>
+            <p>수집 완료 후 <strong>run_log</strong> 탭에 실행 기록이 남고, Google Chat으로 한국어 요약 1건이 발송됩니다.</p>
+          </div>
+        </div>
+        <!-- 우: 경쟁사 그룹 -->
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b" style="padding:clamp(.5rem,1vw,1rem)">
+            <div style="font-size:var(--tl);color:#818CF8;font-weight:700;margin-bottom:5px">Meta 광고 / 30일 초과</div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px">
+              <span class="badge bk">Airbnb</span><span class="badge bk">LiveAnywhere</span><span class="badge bk">Encostay</span><span class="badge bk">자리톡</span><span class="badge bk">직방</span><span class="badge bk">미스터멘션</span><span class="badge bk">삼삼엠투1</span><span class="badge bk">삼삼엠투2</span>
+            </div>
+          </div>
+          <div class="card g" style="padding:clamp(.5rem,1vw,1rem)">
+            <div style="font-size:var(--tl);color:var(--green);font-weight:700;margin-bottom:5px">공개방 수</div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px">
+              <span class="badge bg">Airbnb</span><span class="badge bg">LiveAnywhere</span><span class="badge bg">Encostay</span><span class="badge bg">삼삼엠투</span>
+            </div>
+          </div>
+          <div class="card" style="padding:clamp(.5rem,1vw,1rem)">
+            <div style="font-size:var(--tl);color:var(--txt);font-weight:700;margin-bottom:5px">정책/공지 변경</div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px">
+              <span class="badge bo">Airbnb</span><span class="badge bo">LiveAnywhere</span><span class="badge bo">Encostay</span><span class="badge bo">미스터멘션</span><span class="badge bo">직방</span><span class="badge bo">삼삼엠투</span>
+            </div>
+          </div>
+          <div class="card p" style="padding:clamp(.5rem,1vw,1rem)">
+            <div style="font-size:var(--tl);color:var(--purple);font-weight:700;margin-bottom:5px">앱 버전 / 앱 설명</div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px">
+              <span class="badge bp">Airbnb</span><span class="badge bp">LiveAnywhere</span><span class="badge bp">Encostay</span><span class="badge bp">자리톡</span><span class="badge bp">직방</span><span class="badge bp">미스터멘션</span><span class="badge bp">삼삼엠투</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 03 전체 로드맵 ════════════════════════════════════════════════ -->
+<section class="slide" id="s2">
+  <div class="sn">03</div>
+  <div class="bc">
+    <span class="bc-item on">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">로드맵</div>
+        <h2 class="rev">전체 7단계</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div class="card b" style="display:flex;gap:10px;align-items:flex-start">
+          <div class="step-n">1</div>
+          <div>
+            <h3 style="font-size:var(--ts);color:#818CF8;margin-bottom:3px">사전 요구사항 확인</h3>
+            <p style="font-size:var(--tl)">Python 3.11 · 필요한 계정</p>
+          </div>
+        </div>
+        <div class="card b" style="display:flex;gap:10px;align-items:flex-start">
+          <div class="step-n">2</div>
+          <div>
+            <h3 style="font-size:var(--ts);color:#818CF8;margin-bottom:3px">Python 환경 세팅</h3>
+            <p style="font-size:var(--tl)">가상환경 · 의존성 · Playwright Chromium</p>
+          </div>
+        </div>
+        <div class="card g" style="display:flex;gap:10px;align-items:flex-start">
+          <div class="step-n" style="background:var(--green)">3</div>
+          <div>
+            <h3 style="font-size:var(--ts);color:var(--green);margin-bottom:3px">Google Cloud 서비스 계정</h3>
+            <p style="font-size:var(--tl)">Sheets API 활성화 · JSON 키 · 시트 공유</p>
+          </div>
+        </div>
+        <div class="card w" style="display:flex;gap:10px;align-items:flex-start">
+          <div class="step-n" style="background:var(--warn)">4</div>
+          <div>
+            <h3 style="font-size:var(--ts);color:var(--warn);margin-bottom:3px">.env 파일 작성</h3>
+            <p style="font-size:var(--tl)">환경변수 3개 설정</p>
+          </div>
+        </div>
+        <div class="card g" style="display:flex;gap:10px;align-items:flex-start">
+          <div class="step-n" style="background:var(--green)">5</div>
+          <div>
+            <h3 style="font-size:var(--ts);color:var(--green);margin-bottom:3px">Google Sheet 탭 준비</h3>
+            <p style="font-size:var(--tl)">6개 탭 확인 · app_versions 컬럼 추가</p>
+          </div>
+        </div>
+        <div class="card w" style="display:flex;gap:10px;align-items:flex-start">
+          <div class="step-n" style="background:var(--warn)">6</div>
+          <div>
+            <h3 style="font-size:var(--ts);color:var(--warn);margin-bottom:3px">AirDNA 세션 캡처</h3>
+            <p style="font-size:var(--tl)">Airbnb 공급량 수집을 위한 로그인 세션 저장</p>
+          </div>
+        </div>
+        <div class="card p" style="display:flex;gap:10px;align-items:flex-start;grid-column:span 2">
+          <div class="step-n" style="background:var(--purple)">7</div>
+          <div>
+            <h3 style="font-size:var(--ts);color:var(--purple);margin-bottom:3px">첫 실행 & 결과 확인</h3>
+            <p style="font-size:var(--tl)"><code>python -m src.jobs.run_daily</code> → Google Sheet · Google Chat 확인</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 사전 요구사항 ═══════════════════════════════════════════════ -->
+<section class="slide" id="s3">
+  <div class="sn">04</div>
+  <div class="bc">
+    <span class="bc-item on">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 1 / 7</div>
+        <h2 class="rev">사전 요구사항</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div class="card">
+          <h3 style="font-size:var(--tb);margin-bottom:var(--ge)">🐍 Python 3.11 설치 (Windows)</h3>
+          <div class="tl">
+            <div class="tl-row">
+              <div class="dot g"></div>
+              <div class="tl-txt"><strong>방법 A — winget (권장)</strong><br>
+                <span style="font-size:var(--tl)">PowerShell에서 실행:</span>
+              </div>
+            </div>
+          </div>
+          <div class="term" style="font-size:var(--tl);margin:var(--ge) 0">
+            <span class="b">winget install Python.Python.3.11</span>
+          </div>
+          <div class="tl">
+            <div class="tl-row">
+              <div class="dot g"></div>
+              <div class="tl-txt"><strong>방법 B — 직접 다운로드</strong><br>
+                <span style="font-size:var(--tl)">python.org → Downloads → Python 3.11.x<br>설치 시 <strong style="color:var(--warn)">☑ Add Python to PATH</strong> 반드시 체크</span>
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="dot g"></div>
+              <div class="tl-txt"><strong>설치 확인</strong><br>
+                <span style="font-size:var(--tl)">새 PowerShell 창에서: <code>python --version</code></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:var(--tb);margin-bottom:var(--ge)">🔑 필요한 계정</h3>
+          <div class="tl">
+            <div class="tl-row">
+              <div class="dot"></div>
+              <div class="tl-txt"><strong>Google 계정</strong><br><span style="font-size:var(--tl)">서비스 계정 생성 · Sheets · Chat Webhook 설정</span></div>
+            </div>
+            <div class="tl-row">
+              <div class="dot w"></div>
+              <div class="tl-txt"><strong>AirDNA 계정</strong><br><span style="font-size:var(--tl)">Airbnb 서울 공급량 수집에만 사용<br>세션 한 번 캡처하면 만료 전까지 재사용</span></div>
+            </div>
+            <div class="tl-row">
+              <div class="dot"></div>
+              <div class="tl-txt"><strong>레포 접근</strong><br><span style="font-size:var(--tl)">competitive-growth-monitor 폴더가 로컬에 있어야 함</span></div>
+            </div>
+          </div>
+          <div class="warn-box" style="margin-top:var(--ge)">
+            <div class="icon">⚠️</div>
+            <p>Python 설치 후 <strong>새 PowerShell 창</strong>을 열어야 PATH가 적용됩니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="ok-box rev">
+        <div class="icon">✅</div>
+        <p><code>python --version</code>이 <code>Python 3.11.x</code>를 출력하면 다음 단계로 이동하세요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 Python 환경 세팅 ════════════════════════════════════════════ -->
+<section class="slide" id="s4">
+  <div class="sn">05</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item on">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 2 / 7</div>
+        <h2 class="rev">Python 환경 세팅</h2>
+      </div>
+      <div class="gs rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="tl">
+            <div class="tl-row">
+              <div class="step-n">1</div>
+              <div class="step-body"><strong>PowerShell에서 프로젝트 폴더로 이동</strong></div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">2</div>
+              <div class="step-body"><strong>실행 정책 설정 (최초 1회)</strong><br>
+                <span style="font-size:var(--tl);color:var(--txt3)">PowerShell에서 <code>.ps1</code> 스크립트 실행을 허용하는 설정입니다.</span>
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">3</div>
+              <div class="step-body"><strong>가상환경 생성 & 활성화</strong><br>
+                <span style="font-size:var(--tl);color:var(--txt3)">매번 터미널 열 때마다 활성화 필요. 프롬프트에 <code>(.venv)</code> 표시 확인.</span>
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">4</div>
+              <div class="step-body"><strong>의존성 설치 & Playwright Chromium</strong><br>
+                <span style="font-size:var(--tl);color:var(--txt3)">Meta·AirDNA·앱스토어·정책 페이지 수집에 사용됨. 약 200MB.</span>
+              </div>
+            </div>
+          </div>
+          <div class="warn-box">
+            <div class="icon">⚠️</div>
+            <p><code>(.venv)</code>가 프롬프트에 없으면 <code>.\.venv\Scripts\Activate.ps1</code>을 다시 실행하세요. 이후 모든 명령은 활성화된 상태에서 실행합니다.</p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="term">
+            <span class="d"># 프로젝트 폴더로 이동</span><br>
+            <span class="b">cd C:\Users\you\competitive-growth-monitor</span><br>
+            <br>
+            <span class="d"># 실행 정책 설정 (최초 1회)</span><br>
+            <span class="b">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</span><br>
+            <br>
+            <span class="d"># 가상환경 생성</span><br>
+            <span class="b">python -m venv .venv</span><br>
+            <br>
+            <span class="d"># 가상환경 활성화 (PowerShell)</span><br>
+            <span class="b">.\.venv\Scripts\Activate.ps1</span><br>
+            <br>
+            <span class="d"># 프롬프트 확인</span><br>
+            <span class="up">(.venv) PS C:\...&gt;</span> <span class="cm">← 이렇게 보여야 정상</span><br>
+            <br>
+            <span class="d"># 의존성 설치</span><br>
+            <span class="b">pip install -r requirements.txt</span><br>
+            <br>
+            <span class="d"># Playwright Chromium 설치</span><br>
+            <span class="b">python -m playwright install chromium</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 Google Cloud — API & 서비스 계정 ════════════════════════════ -->
+<section class="slide" id="s5">
+  <div class="sn">06</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item on">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 3 / 7 — 파트 A</div>
+        <h2 class="rev">Google Cloud 서비스 계정</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <h3 style="font-size:var(--ts);color:#818CF8;margin-bottom:var(--ge)">① Google Sheets API 활성화</h3>
+            <div class="tl">
+              <div class="tl-row">
+                <div class="dot"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">브라우저에서 <strong>console.cloud.google.com</strong> → 프로젝트 선택</div>
+              </div>
+              <div class="tl-row">
+                <div class="dot"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">APIs &amp; Services → Enabled APIs → <strong>Google Sheets API</strong> 활성화 확인</div>
+              </div>
+            </div>
+          </div>
+          <div class="card g">
+            <h3 style="font-size:var(--ts);color:var(--green);margin-bottom:var(--ge)">② 서비스 계정 JSON 키 다운로드</h3>
+            <div class="tl">
+              <div class="tl-row">
+                <div class="dot g"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">IAM &amp; Admin → Service Accounts → 기존 계정 선택 (또는 신규 생성)</div>
+              </div>
+              <div class="tl-row">
+                <div class="dot g"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">Keys 탭 → <strong>ADD KEY → Create new key → JSON</strong></div>
+              </div>
+              <div class="tl-row">
+                <div class="dot g"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">다운로드된 <code>.json</code> 파일을 <code>.secrets\</code> 폴더에 저장 (다음 슬라이드)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="warn-box">
+            <div class="icon">⚠️</div>
+            <p><strong>API 키만으로는 Google Sheet에 쓸 수 없습니다.</strong><br>서비스 계정 JSON이 반드시 필요하며, 시트에 편집자로 공유되어야 합니다.</p>
+          </div>
+          <div class="card">
+            <h3 style="font-size:var(--ts);margin-bottom:var(--ge)">💡 알아두기</h3>
+            <div class="tl">
+              <div class="tl-row">
+                <div class="dot"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">서비스 계정 = 사람 대신 API를 호출하는 봇 계정</div>
+              </div>
+              <div class="tl-row">
+                <div class="dot"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">JSON 파일 안에 private key가 포함됨 → <strong>절대 커밋/공유 금지</strong></div>
+              </div>
+              <div class="tl-row">
+                <div class="dot"></div>
+                <div class="tl-txt" style="font-size:var(--tl)"><code>GOOGLE_APPLICATION_CREDENTIALS</code>에 JSON 파일 경로를 지정해야 인증됨</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 JSON 저장 & Sheet 공유 ════════════════════════════════════ -->
+<section class="slide" id="s6">
+  <div class="sn">07</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item on">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 3 / 7 — 파트 B</div>
+        <h2 class="rev">JSON 저장 & Sheet 공유</h2>
+      </div>
+      <div class="gm rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="tl">
+            <div class="tl-row">
+              <div class="step-n">1</div>
+              <div class="step-body"><strong>프로젝트 안에 .secrets 폴더 생성</strong><br>
+                <code>.secrets\</code> 폴더는 <code>.gitignore</code>에 포함됨 → 절대 커밋되지 않음
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">2</div>
+              <div class="step-body"><strong>다운받은 JSON 파일을 폴더로 이동</strong><br>
+                파일명을 <code>google_service_account.json</code>으로 변경
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">3</div>
+              <div class="step-body"><strong>client_email 확인 후 Google Sheet 공유</strong><br>
+                Google Sheet → 공유 버튼 → client_email 붙여넣기 → <strong>편집자</strong> 설정<br>
+                <span style="font-size:var(--tl);color:var(--txt3)">"알림 보내기" 체크 해제</span>
+              </div>
+            </div>
+          </div>
+          <div class="ok-box">
+            <div class="icon">✅</div>
+            <p>공유 후 서비스 계정이 해당 Sheet에 행을 추가할 수 있게 됩니다.</p>
+          </div>
+        </div>
+        <div>
+          <div class="term">
+            <span class="d"># .secrets 폴더 생성</span><br>
+            <span class="b">md .secrets</span><br>
+            <br>
+            <span class="d"># 다운받은 JSON을 이동 & 이름 변경</span><br>
+            <span class="b">Move-Item "$env:USERPROFILE\Downloads\your-key.json" `.secrets\google_service_account.json</span><br>
+            <br>
+            <span class="d"># client_email 확인</span><br>
+            <span class="b">python -c "
+import json
+d = json.load(open('.secrets/google_service_account.json'))
+print('email  :', d.get('client_email'))
+print('project:', d.get('project_id'))
+"</span><br>
+            <br>
+            <span class="up">email  : your-sa@project.iam.gserviceaccount.com</span><br>
+            <span class="up">project: spacev-ai-tf</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 08 .env 파일 작성 ════════════════════════════════════════════ -->
+<section class="slide" id="s7">
+  <div class="sn">08</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item on">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 4 / 7</div>
+        <h2 class="rev">.env 파일 작성</h2>
+      </div>
+      <div class="gm rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="tl">
+            <div class="tl-row">
+              <div class="step-n">1</div>
+              <div class="step-body"><strong>.env.example 복사</strong></div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">2</div>
+              <div class="step-body"><strong>아래 3개 값 채우기</strong> (나머지는 비워도 됨)</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--ge)">
+            <div class="card b">
+              <h3 style="font-size:var(--tl);color:#818CF8;margin-bottom:4px">GOOGLE_APPLICATION_CREDENTIALS</h3>
+              <p style="font-size:var(--tl)">서비스 계정 JSON 파일 경로<br><code>.secrets/google_service_account.json</code></p>
+            </div>
+            <div class="card g">
+              <h3 style="font-size:var(--tl);color:var(--green);margin-bottom:4px">GOOGLE_SHEET_ID</h3>
+              <p style="font-size:var(--tl)">Google Sheet URL에서 추출<br><code>.../spreadsheets/d/<strong style="color:var(--warn)">여기가 ID</strong>/edit</code></p>
+            </div>
+            <div class="card w">
+              <h3 style="font-size:var(--tl);color:var(--warn);margin-bottom:4px">GOOGLE_CHAT_WEBHOOK_URL</h3>
+              <p style="font-size:var(--tl)">Google Chat 공간 → 앱 및 통합 → Incoming Webhooks</p>
+            </div>
+          </div>
+          <div class="warn-box">
+            <div class="icon">⚠️</div>
+            <p><code>.env</code> 파일은 <code>.gitignore</code>에 포함됨. 절대 커밋하지 않는다.</p>
+          </div>
+        </div>
+        <div>
+          <div class="term">
+            <span class="d"># .env.example 복사 (PowerShell)</span><br>
+            <span class="b">Copy-Item .env.example .env</span><br>
+            <br>
+            <span class="d"># .env 파일 편집 (VS Code)</span><br>
+            <span class="b">code .env</span><br>
+            <br>
+            <span class="d"># 메모장으로 열려면</span><br>
+            <span class="b">notepad .env</span><br>
+            <br>
+            <span class="d"># .env 내용 (3개만 채우면 됨)</span><br>
+            <span class="nw">GOOGLE_APPLICATION_CREDENTIALS</span>=<span class="up">.secrets/google_service_account.json</span><br>
+            <br>
+            <span class="nw">GOOGLE_SHEET_ID</span>=<span class="up">1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms</span><br>
+            <br>
+            <span class="nw">GOOGLE_CHAT_WEBHOOK_URL</span>=<span class="up">https://chat.googleapis.com/v1/spaces/...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 09 Google Sheet 탭 준비 ══════════════════════════════════════ -->
+<section class="slide" id="s8">
+  <div class="sn">09</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item on">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 5 / 7 — 파트 A</div>
+        <h2 class="rev">Google Sheet 탭 준비</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card">
+            <h3 style="font-size:var(--ts);margin-bottom:var(--ge)">필요한 탭 6개</h3>
+            <table class="tbl">
+              <thead><tr><th>탭 이름</th><th>용도</th></tr></thead>
+              <tbody>
+                <tr><td><code>meta_ad_counts</code></td><td>Meta 광고 수 일별</td></tr>
+                <tr><td><code>meta_ad_start_dates</code></td><td>광고 소재별 게재일</td></tr>
+                <tr><td><code>raw_supply_snapshots</code></td><td>공개방 수 원본</td></tr>
+                <tr><td><code>policy_updates</code></td><td>정책 변경 감지</td></tr>
+                <tr><td><code>app_versions</code></td><td>앱 버전 & 설명</td></tr>
+                <tr><td><code>run_log</code></td><td>실행 기록</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ok-box">
+            <div class="icon">💡</div>
+            <p>탭이 없으면 직접 추가하세요 (이름 정확히 일치). 헤더 행은 첫 실행 시 자동 생성됩니다.</p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card w">
+            <h3 style="font-size:var(--ts);color:var(--warn);margin-bottom:var(--ge)">app_versions 탭 — 추가 컬럼 4개</h3>
+            <p style="font-size:var(--tl);margin-bottom:var(--ge);color:var(--txt2)">앱 설명 변경 감지를 위해 수동으로 헤더를 추가해야 합니다.<br>기존 헤더 마지막 열 오른쪽에 순서대로 입력:</p>
+            <div class="tl">
+              <div class="tl-row">
+                <div class="step-n" style="background:var(--warn);font-size:var(--tl);width:20px;height:20px;min-width:20px">1</div>
+                <div class="tl-txt" style="font-size:var(--tl)"><code>app_description</code> — 앱스토어 설명 전문</div>
+              </div>
+              <div class="tl-row">
+                <div class="step-n" style="background:var(--warn);font-size:var(--tl);width:20px;height:20px;min-width:20px">2</div>
+                <div class="tl-txt" style="font-size:var(--tl)"><code>app_description_hash</code> — SHA-256 앞 16자</div>
+              </div>
+              <div class="tl-row">
+                <div class="step-n" style="background:var(--warn);font-size:var(--tl);width:20px;height:20px;min-width:20px">3</div>
+                <div class="tl-txt" style="font-size:var(--tl)"><code>is_description_changed</code> — 전일 대비 변경</div>
+              </div>
+              <div class="tl-row">
+                <div class="step-n" style="background:var(--warn);font-size:var(--tl);width:20px;height:20px;min-width:20px">4</div>
+                <div class="tl-txt" style="font-size:var(--tl)"><code>description_change_summary_ko</code> — 변경 요약</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 10 각 탭이 저장하는 것 (NEW) ══════════════════════════════════ -->
+<section class="slide" id="s9">
+  <div class="sn">10</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item on">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 5 / 7 — 파트 B</div>
+        <h2 class="rev">각 탭이 저장하는 것</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <!-- 좌 컬럼 -->
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b" style="padding:clamp(.6rem,1vw,1rem)">
+            <h3 style="font-size:var(--ts);color:#818CF8;margin-bottom:5px"><code>meta_ad_counts</code></h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">날짜별/경쟁사별 Meta 광고 총개수 저장</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">Google Chat의 <strong>[Meta 광고]</strong> 숫자 기준 탭</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)"><code>displayed_meta_count</code> 기준 — 상세 row 개수와 다를 수 있음</div></div>
+            </div>
+          </div>
+          <div class="card b" style="padding:clamp(.6rem,1vw,1rem)">
+            <h3 style="font-size:var(--ts);color:#818CF8;margin-bottom:5px"><code>meta_ad_start_dates</code></h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">Meta 광고별 library_id, 광고 URL, 게재 시작일 저장</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">30일 초과 광고 판단 기준 탭</div></div>
+              <div class="tl-row"><div class="dot w"></div><div class="tl-txt" style="font-size:var(--tl)"><strong style="color:var(--warn)">노란색 표시</strong> = 30일 초과 장기 집행 광고 (수동 검토 대상)</div></div>
+            </div>
+          </div>
+          <div class="card g" style="padding:clamp(.6rem,1vw,1rem)">
+            <h3 style="font-size:var(--ts);color:var(--green);margin-bottom:5px"><code>raw_supply_snapshots</code></h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot g"></div><div class="tl-txt" style="font-size:var(--tl)">경쟁사별 공개방 수 수집 결과 저장</div></div>
+              <div class="tl-row"><div class="dot g"></div><div class="tl-txt" style="font-size:var(--tl)">Airbnb, LiveAnywhere, Encostay, 삼삼엠투 (건물유형별 합산)</div></div>
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)">실패 시 <code>status</code> / <code>error_message</code> 컬럼 확인</div></div>
+            </div>
+          </div>
+        </div>
+        <!-- 우 컬럼 -->
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card" style="padding:clamp(.6rem,1vw,1rem)">
+            <h3 style="font-size:var(--ts);margin-bottom:5px"><code>policy_updates</code></h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">정책/공지 변경 감지 결과 저장</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">새 공지 또는 내용 변경 감지 시 row 추가</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">Google Chat에는 <strong>변경이 있을 때만</strong> 표시</div></div>
+            </div>
+          </div>
+          <div class="card p" style="padding:clamp(.6rem,1vw,1rem)">
+            <h3 style="font-size:var(--ts);color:var(--purple);margin-bottom:5px"><code>app_versions</code></h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot p"></div><div class="tl-txt" style="font-size:var(--tl)">앱스토어/구글플레이 버전, 업데이트 날짜, 릴리즈노트</div></div>
+              <div class="tl-row"><div class="dot p"></div><div class="tl-txt" style="font-size:var(--tl)">앱 설명 원문, hash, 변경 여부도 저장</div></div>
+              <div class="tl-row"><div class="dot p"></div><div class="tl-txt" style="font-size:var(--tl)"><code>is_changed</code> = 앱 버전/업데이트 변경<br><code>is_description_changed</code> = 앱 설명 변경</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">Google Chat에는 <strong>변경이 있을 때만</strong> 표시</div></div>
+            </div>
+          </div>
+          <div class="card r" style="padding:clamp(.6rem,1vw,1rem)">
+            <h3 style="font-size:var(--ts);color:var(--red);margin-bottom:5px"><code>run_log</code></h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)">전체 실행 결과 로그 저장</div></div>
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)">실행 성공/실패, 부분 실패, 에러 메시지 확인용</div></div>
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)"><strong>문제가 생기면 가장 먼저 확인하는 탭</strong></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 11 AirDNA 세션 캡처 ═══════════════════════════════════════════ -->
+<section class="slide" id="s10">
+  <div class="sn">11</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item on">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 6 / 7 — 파트 A</div>
+        <h2 class="rev">AirDNA 세션 캡처</h2>
+      </div>
+      <div class="gm rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <p style="font-size:var(--ts)">Airbnb 서울 공급량 수집은 <strong>AirDNA 로그인 세션</strong>에 의존합니다.<br>세션 파일 없이 실행하면 Airbnb 수집이 실패합니다.</p>
+          <div class="tl">
+            <div class="tl-row">
+              <div class="step-n">1</div>
+              <div class="step-body"><strong>가상환경 활성화 확인 후 스크립트 실행</strong><br>
+                <span style="font-size:var(--tl);color:var(--txt3)">프롬프트에 <code>(.venv)</code>가 있어야 함</span>
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">2</div>
+              <div class="step-body"><strong>Chromium 브라우저가 자동으로 열립니다</strong><br>
+                AirDNA 서울 listings 페이지로 이동
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">3</div>
+              <div class="step-body"><strong>브라우저에서 AirDNA 계정으로 로그인</strong><br>
+                <span style="font-size:var(--tl);color:var(--txt3)">로그인 후 서울 리스팅 페이지에서 "Total Active Listings" 숫자 확인</span>
+              </div>
+            </div>
+            <div class="tl-row">
+              <div class="step-n">4</div>
+              <div class="step-body"><strong>PowerShell 창으로 돌아와서 Enter</strong><br>
+                <span style="font-size:var(--tl);color:var(--green)">세션이 .auth\airdna_state.json에 저장됩니다</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="term">
+            <span class="d"># 가상환경 활성화 확인</span><br>
+            <span class="up">(.venv) PS C:\...&gt;</span><br>
+            <br>
+            <span class="d"># AirDNA 세션 캡처 스크립트</span><br>
+            <span class="b">python scripts/setup_airdna_session.py</span><br>
+            <br>
+            <span class="cm">Browser is open.</span><br>
+            <span class="cm">Log in, then press Enter here when ready.</span><br>
+            <br>
+            <span class="d"># 브라우저 로그인 완료 후 Enter 입력</span><br>
+            <span class="nw">Press Enter to save session... </span><br>
+            <br>
+            <span class="up">Session saved to: .auth/airdna_state.json</span><br>
+            <span class="up">You can now run: python -m src.jobs.collect_supply</span>
+          </div>
+          <div style="margin-top:var(--ge)" class="warn-box">
+            <div class="icon">🔒</div>
+            <p><code>.auth\airdna_state.json</code>은 로그인 쿠키 포함. <strong>절대 커밋/공유하지 않습니다.</strong> (.gitignore에 포함됨)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 12 AirDNA 세션 만료 대처 ═════════════════════════════════════ -->
+<section class="slide" id="s11">
+  <div class="sn">12</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item on">AirDNA</span>
+    <span class="bc-item">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 6 / 7 — 파트 B</div>
+        <h2 class="rev">AirDNA 세션 만료 대처</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card r">
+            <h3 style="font-size:var(--ts);color:var(--red);margin-bottom:var(--ge)">🚨 만료 증상</h3>
+            <div class="tl">
+              <div class="tl-row">
+                <div class="dot r"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">Google Chat [공개방 수]에 Airbnb 서울 미표시 또는 "수집 실패"</div>
+              </div>
+              <div class="tl-row">
+                <div class="dot r"></div>
+                <div class="tl-txt" style="font-size:var(--tl)"><code>raw_supply_snapshots</code> 탭에서 airbnb 행 <code>status = login_required</code></div>
+              </div>
+              <div class="tl-row">
+                <div class="dot r"></div>
+                <div class="tl-txt" style="font-size:var(--tl)">터미널 로그에 <code>[LOGIN_REQUIRED] airbnb/airdna / Seoul</code></div>
+              </div>
+            </div>
+          </div>
+          <div class="card g">
+            <h3 style="font-size:var(--ts);color:var(--green);margin-bottom:var(--ge)">✅ 재갱신 방법</h3>
+            <div class="tl">
+              <div class="tl-row">
+                <div class="step-n" style="background:var(--green);width:20px;height:20px;min-width:20px;font-size:var(--tl)">1</div>
+                <div class="tl-txt" style="font-size:var(--tl)">가상환경 활성화 → 동일 스크립트 재실행</div>
+              </div>
+              <div class="tl-row">
+                <div class="step-n" style="background:var(--green);width:20px;height:20px;min-width:20px;font-size:var(--tl)">2</div>
+                <div class="tl-txt" style="font-size:var(--tl)">브라우저에서 AirDNA 재로그인</div>
+              </div>
+              <div class="tl-row">
+                <div class="step-n" style="background:var(--green);width:20px;height:20px;min-width:20px;font-size:var(--tl)">3</div>
+                <div class="tl-txt" style="font-size:var(--tl)">Enter → 세션 갱신 완료</div>
+              </div>
+            </div>
+            <div class="term" style="margin-top:var(--ge)">
+              <span class="b">.\.venv\Scripts\Activate.ps1</span><br>
+              <span class="b">python scripts/setup_airdna_session.py</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="warn-box">
+            <div class="icon">⚠️</div>
+            <p><strong>민감 파일 절대 원칙</strong><br><code>.auth\airdna_state.json</code> — 커밋/공유 금지<br><code>.secrets\google_service_account.json</code> — 커밋/공유 금지<br><code>.env</code> — 커밋/공유 금지</p>
+          </div>
+          <div class="card">
+            <h3 style="font-size:var(--ts);margin-bottom:var(--ge)">💡 세션 유효 기간</h3>
+            <p style="font-size:var(--tl)">AirDNA 세션은 일정 시간이 지나면 만료됩니다.<br>Airbnb 공급량 수집 실패 시 가장 먼저 세션 만료를 의심하세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 13 첫 실행 ════════════════════════════════════════════════════ -->
+<section class="slide" id="s12">
+  <div class="sn">13</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item on">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">단계 7 / 7</div>
+        <h2 class="rev">첫 실행</h2>
+      </div>
+      <div class="gs rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <h3 style="font-size:var(--tb);color:var(--green);margin-bottom:var(--ge)">🚀 전체 파이프라인 실행 (권장)</h3>
+            <p style="font-size:var(--tl);margin-bottom:var(--ge)">Meta 광고 → 공급량 → 정책/공지 → 앱 버전 → run_log 기록 → Google Chat 발송</p>
+            <div class="term">
+              <span class="d"># 가상환경 활성화 확인</span><br>
+              <span class="b">.\.venv\Scripts\Activate.ps1</span><br>
+              <br>
+              <span class="d"># 전체 파이프라인 실행</span><br>
+              <span class="b">python -m src.jobs.run_daily</span><br>
+              <br>
+              <span class="d"># 로그 파일로 저장하려면</span><br>
+              <span class="b">python -m src.jobs.run_daily | Tee-Object -FilePath cgm-daily.log</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:var(--tb);margin-bottom:var(--ge)">⚡ 개별 워크플로우만 실행</h3>
+            <p style="font-size:var(--tl);margin-bottom:var(--ge);color:var(--txt3)">개별 실행 시 Google Chat 발송 없음. 테스트용으로 사용.</p>
+            <div class="term" style="font-size:var(--tl)">
+              <span class="b">python -m src.jobs.collect_meta_ad_start_dates</span><br>
+              <span class="b">python -m src.jobs.collect_supply</span><br>
+              <span class="b">python -m src.jobs.detect_policy_changes</span><br>
+              <span class="b">python -m src.jobs.collect_app_versions</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="g2" style="gap:var(--ge)">
+            <div class="stat">
+              <div class="stat-n" style="font-size:clamp(1.5rem,3vw,2.5rem);color:var(--accent)">10~20<span style="font-size:.5em">분</span></div>
+              <div class="stat-l">전체 파이프라인 소요</div>
+            </div>
+            <div class="stat">
+              <div class="stat-n" style="font-size:clamp(1.5rem,3vw,2.5rem);color:var(--green)">6개</div>
+              <div class="stat-l">저장되는 Sheet 탭</div>
+            </div>
+          </div>
+          <div class="ok-box">
+            <div class="icon">💡</div>
+            <p>실행 전 <code>(.venv)</code>가 프롬프트에 보이는지 확인하세요.<br>새 PowerShell 창을 열 때마다 가상환경을 다시 활성화해야 합니다.</p>
+          </div>
+          <div class="warn-box">
+            <div class="icon">⏱</div>
+            <p>첫 실행 시 Playwright 브라우저를 여러 개 순차 실행하므로 시간이 걸립니다. 중간에 끊지 마세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 14 실행 결과 확인 ══════════════════════════════════════════════ -->
+<section class="slide" id="s13">
+  <div class="sn">14</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item on">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl rev">실행 후</div>
+        <h2 class="rev">결과 확인</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div>
+          <div class="card" style="height:100%">
+            <h3 style="font-size:var(--tb);margin-bottom:var(--ge)">📊 Google Sheet 확인</h3>
+            <table class="tbl">
+              <thead><tr><th>탭</th><th>확인 내용</th></tr></thead>
+              <tbody>
+                <tr><td><code>run_log</code></td><td>최근 행 <code>status = ok</code> 또는 <code>partial</code></td></tr>
+                <tr><td><code>meta_ad_counts</code></td><td>오늘 날짜로 8개 경쟁사 행</td></tr>
+                <tr><td><code>meta_ad_start_dates</code></td><td>오늘 날짜 광고 소재 행 (30일 초과 = 노란색)</td></tr>
+                <tr><td><code>raw_supply_snapshots</code></td><td>airbnb/서울 포함 오늘 날짜 행</td></tr>
+                <tr><td><code>policy_updates</code></td><td>정책 페이지 체크 결과</td></tr>
+                <tr><td><code>app_versions</code></td><td>각 앱 버전 & 설명</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <h3 style="font-size:var(--tb);color:var(--green);margin-bottom:var(--ge)">💬 Google Chat — 항상 표시</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot g"></div><div class="tl-txt" style="font-size:var(--tl)"><strong>[Meta 광고]</strong> — 경쟁사별 광고 수 + 전일 대비</div></div>
+              <div class="tl-row"><div class="dot g"></div><div class="tl-txt" style="font-size:var(--tl)"><strong>[Meta 30일 초과 광고]</strong> — 장기 게재 수</div></div>
+              <div class="tl-row"><div class="dot g"></div><div class="tl-txt" style="font-size:var(--tl)"><strong>[공개방 수]</strong> — Airbnb·리브애니웨어·엔코스테이·삼삼엠투</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:var(--tb);margin-bottom:var(--ge)">💬 Google Chat — 변경 시만 표시</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)"><strong>[정책/공지]</strong> — 새 공지 또는 내용 변경</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)"><strong>[앱 업데이트]</strong> — 신규 버전 출시</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)"><strong>[앱 설명 변경]</strong> — 앱 설명 변경 감지</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 15 자주 나는 오류 ══════════════════════════════════════════════ -->
+<section class="slide" id="s14">
+  <div class="sn">15</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item on">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl w rev">트러블슈팅</div>
+        <h2 class="rev">자주 나는 오류</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card r">
+            <h3 style="font-size:var(--ts);color:var(--red);margin-bottom:5px">🔴 PowerShell 실행 정책 오류</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)"><code>cannot be loaded because running scripts is disabled</code></div></div>
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl);color:var(--txt)"><code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code></div></div>
+            </div>
+          </div>
+          <div class="card r">
+            <h3 style="font-size:var(--ts);color:var(--red);margin-bottom:5px">🔴 Sheets 권한 오류 (403)</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)">서비스 계정 <code>client_email</code>이 Sheet에 <strong>편집자</strong>로 공유됐는지 확인</div></div>
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)"><code>GOOGLE_APPLICATION_CREDENTIALS</code> 경로가 올바른지 확인</div></div>
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)">Google Cloud에서 <strong>Google Sheets API</strong> 활성화 여부 확인</div></div>
+            </div>
+          </div>
+          <div class="card w">
+            <h3 style="font-size:var(--ts);color:var(--warn);margin-bottom:5px">🟡 Sheets 429 Quota 오류</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot w"></div><div class="tl-txt" style="font-size:var(--tl)">API 쓰기 요청이 60회/분을 초과할 때 발생</div></div>
+              <div class="tl-row"><div class="dot w"></div><div class="tl-txt" style="font-size:var(--tl)">자동 retry 로직(최대 3회, 20/40/80초 대기)이 내장됨</div></div>
+              <div class="tl-row"><div class="dot w"></div><div class="tl-txt" style="font-size:var(--tl)">계속 발생하면 20~30분 후 재실행</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card w">
+            <h3 style="font-size:var(--ts);color:var(--warn);margin-bottom:5px">🟡 AirDNA 세션 만료</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot w"></div><div class="tl-txt" style="font-size:var(--tl)">Chat에 Airbnb 서울 미표시 / <code>login_required</code></div></div>
+              <div class="tl-row"><div class="dot w"></div><div class="tl-txt" style="font-size:var(--tl);color:var(--txt)"><code>python scripts/setup_airdna_session.py</code> 재실행</div></div>
+            </div>
+          </div>
+          <div class="card r">
+            <h3 style="font-size:var(--ts);color:var(--red);margin-bottom:5px">🔴 Playwright 브라우저 없음</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl)"><code>Executable doesn't exist</code> 에러</div></div>
+              <div class="tl-row"><div class="dot r"></div><div class="tl-txt" style="font-size:var(--tl);color:var(--txt)"><code>python -m playwright install chromium</code></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:var(--ts);margin-bottom:5px">⬜ python 명령 인식 안 됨</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">Python 설치 시 <strong>Add to PATH</strong> 미체크 → 재설치 필요</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">설치 후 <strong>새 PowerShell 창</strong>을 열어야 PATH 적용</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:var(--ts);margin-bottom:5px">⬜ Google Chat 메시지 안 옴</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)"><code>GOOGLE_CHAT_WEBHOOK_URL</code>이 <code>.env</code>에 설정됐는지 확인</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">개별 job 실행(<code>python -m src.jobs...</code>)으로는 Chat 발송 안 됨</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 16 민감 파일 & 완료 ════════════════════════════════════════════ -->
+<section class="slide" id="s15">
+  <div class="sn">16</div>
+  <div class="bc">
+    <span class="bc-item">개요</span>
+    <span class="bc-item">Python</span>
+    <span class="bc-item">Google</span>
+    <span class="bc-item">.env</span>
+    <span class="bc-item">시트</span>
+    <span class="bc-item">AirDNA</span>
+    <span class="bc-item on">실행</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div>
+        <div class="lbl g rev">설치 완료 🎉</div>
+        <h2 class="rev">민감 파일 & 일상 운영</h2>
+      </div>
+      <div class="g2 rev" style="flex:1;align-content:start">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card r">
+            <h3 style="font-size:var(--tb);color:var(--red);margin-bottom:var(--ge)">⛔ 절대 커밋/공유하지 않는 파일</h3>
+            <table class="tbl">
+              <thead><tr><th>파일</th><th>위치</th></tr></thead>
+              <tbody>
+                <tr><td>서비스 계정 JSON</td><td><code>.secrets\google_service_account.json</code></td></tr>
+                <tr><td>환경변수</td><td><code>.env</code></td></tr>
+                <tr><td>AirDNA 세션</td><td><code>.auth\airdna_state.json</code></td></tr>
+              </tbody>
+            </table>
+            <p style="font-size:var(--tl);margin-top:var(--ge);color:rgba(248,113,113,.7)">세 파일 모두 <code>.gitignore</code>에 포함됨. git이 자동으로 추적 제외.</p>
+          </div>
+          <div class="card g">
+            <h3 style="font-size:var(--tb);color:var(--green);margin-bottom:var(--ge)">✅ 핵심 명령 7단계 요약 (Windows)</h3>
+            <div class="term" style="font-size:var(--tl)">
+              <span class="cm"># 1. 실행 정책 (최초 1회)</span><br>
+              <span class="b">Set-ExecutionPolicy RemoteSigned -Scope CurrentUser</span><br>
+              <span class="cm"># 2. 가상환경</span><br>
+              <span class="b">python -m venv .venv</span><br>
+              <span class="b">.\.venv\Scripts\Activate.ps1</span><br>
+              <span class="cm"># 3. 의존성 & Playwright</span><br>
+              <span class="b">pip install -r requirements.txt</span><br>
+              <span class="b">python -m playwright install chromium</span><br>
+              <span class="cm"># 4. JSON → .secrets\  5. .env 작성  6. AirDNA</span><br>
+              <span class="b">python scripts/setup_airdna_session.py</span><br>
+              <span class="cm"># 7. 첫 실행</span><br>
+              <span class="b">python -m src.jobs.run_daily</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <h3 style="font-size:var(--tb);color:#818CF8;margin-bottom:var(--ge)">🔁 일상 수동 실행</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">PowerShell 열기 → 프로젝트 폴더 이동</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)"><code>.\.venv\Scripts\Activate.ps1</code> 활성화</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)"><code>python -m src.jobs.run_daily</code> 실행</div></div>
+              <div class="tl-row"><div class="dot g"></div><div class="tl-txt" style="font-size:var(--tl)">결과: Google Sheet 6개 탭 업데이트 + Google Chat 요약 1건</div></div>
+              <div class="tl-row"><div class="dot"></div><div class="tl-txt" style="font-size:var(--tl)">소요시간: 약 10~20분</div></div>
+            </div>
+          </div>
+          <div class="card w">
+            <h3 style="font-size:var(--tb);color:var(--warn);margin-bottom:var(--ge)">🔧 AirDNA 세션 만료 시</h3>
+            <div class="tl">
+              <div class="tl-row"><div class="dot w"></div><div class="tl-txt" style="font-size:var(--tl)">Airbnb 공급량 수집 실패 → <code>python scripts/setup_airdna_session.py</code> 재실행</div></div>
+            </div>
+          </div>
+          <div class="ok-box">
+            <div class="icon">📄</div>
+            <p>상세 설명은 <code>docs/LOCAL_SETUP_GUIDE.md</code>를 참고하세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+const slides = Array.from(document.querySelectorAll('.slide'));
+const prog   = document.getElementById('prog');
+const dotsEl = document.getElementById('dots');
+
+slides.forEach((_,i) => {
+  const btn = document.createElement('button');
+  btn.className = 'nd';
+  btn.title = `Slide ${i+1}`;
+  btn.onclick = () => slides[i].scrollIntoView({behavior:'smooth'});
+  dotsEl.appendChild(btn);
+});
+
+const ndBtns = dotsEl.querySelectorAll('.nd');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting) e.target.classList.add('vis');
+  });
+}, {threshold: 0.55});
+
+slides.forEach(s => observer.observe(s));
+
+const scrollObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(!e.isIntersecting) return;
+    const i = slides.indexOf(e.target);
+    prog.style.width = ((i+1)/slides.length * 100) + '%';
+    ndBtns.forEach((b,j) => b.classList.toggle('on', j===i));
+  });
+}, {threshold: 0.6});
+
+slides.forEach(s => scrollObserver.observe(s));
+
+document.addEventListener('keydown', e => {
+  const cur = slides.findIndex(s => {
+    const r = s.getBoundingClientRect();
+    return r.top >= -50 && r.top < window.innerHeight/2;
+  });
+  if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key===' ') {
+    e.preventDefault();
+    if(cur < slides.length-1) slides[cur+1].scrollIntoView({behavior:'smooth'});
+  }
+  if(e.key==='ArrowUp'||e.key==='ArrowLeft') {
+    e.preventDefault();
+    if(cur > 0) slides[cur-1].scrollIntoView({behavior:'smooth'});
+  }
+});
+
+let ts = 0;
+document.addEventListener('touchstart', e => { ts = e.touches[0].clientY; }, {passive:true});
+document.addEventListener('touchend', e => {
+  const diff = ts - e.changedTouches[0].clientY;
+  const cur = slides.findIndex(s => {
+    const r = s.getBoundingClientRect();
+    return r.top >= -50 && r.top < window.innerHeight/2;
+  });
+  if(Math.abs(diff) > 50) {
+    if(diff > 0 && cur < slides.length-1) slides[cur+1].scrollIntoView({behavior:'smooth'});
+    if(diff < 0 && cur > 0)              slides[cur-1].scrollIntoView({behavior:'smooth'});
+  }
+}, {passive:true});
+</script>
+</body>
+</html>
