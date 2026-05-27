@@ -1,0 +1,16 @@
+name: Playwright Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'URL to process'
+        required: true
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo target URL
+        run: echo "target_url=${{ github.event.inputs.target_url }}"
