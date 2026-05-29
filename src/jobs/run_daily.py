@@ -185,7 +185,9 @@ def _build_summary(
         display_comp, display_region = mapping
         count = r.get("count")
         status = r.get("status", "failed")
-        if count is not None:
+        if count is not None and status == "sheet_write_failed":
+            entry = f"{display_region} {count:,}개 (시트 저장 실패)"
+        elif count is not None:
             entry = f"{display_region} {count:,}개"
         elif status == "login_required":
             entry = f"{display_region} 로그인 필요"
@@ -199,6 +201,18 @@ def _build_summary(
         entries = grouped.get(display_comp)
         if entries:
             lines.append(f"• {display_comp}: {', '.join(entries)}")
+
+    # ── [시트 기록 실패] — only shown when meta_ad_counts write failed ─────────
+    meta_count_write_failed = [
+        display_name
+        for comp_key, display_name in _META_ORDER
+        if not meta_by_key.get(comp_key, {}).get("meta_count_sheet_ok", True)
+        and meta_by_key.get(comp_key) is not None
+    ]
+    if meta_count_write_failed:
+        lines += ["", "*[시트 기록 실패 - Meta 광고 수]*"]
+        for name in meta_count_write_failed:
+            lines.append(f"• {name}: meta_ad_counts 저장 실패 (다음 실행 시 전일 비교 불가)")
 
     # ── [정책/공지] — only shown when is_new or is_changed exists ────────────
     # Collect all changed pages grouped by competitor key
@@ -277,6 +291,52 @@ def _build_summary(
         + policy_stats.get("failed", 0)
         + (app_stats.get("failed", 0) if app_stats else 0)
     )
+
+    # ── [실패 상세] — only shown when there are counted failures ─────────────
+    _POLICY_STATUS_KO = {
+        "fetch_failed": "페이지 수집 실패",
+        "timeout": "시간 초과",
+        "no_post": "게시물 파싱 실패",
+        "failed": "수집 실패",
+    }
+    _META_DISPLAY = dict(_META_ORDER)
+    failure_details: list[str] = []
+
+    for r in policy_stats.get("results", []):
+        status = r.get("status", "")
+        if status in _POLICY_STATUS_KO:
+            display = r.get("competitor_display", r.get("competitor", ""))
+            failure_details.append(f"정책({display}): {_POLICY_STATUS_KO[status]}")
+
+    for r in meta_ad_stats.get("results", []):
+        if r.get("status") == "failed":
+            display = _META_DISPLAY.get(r.get("competitor", ""), r.get("competitor", ""))
+            failure_details.append(f"Meta 광고({display}): 수집 실패")
+
+    for comp_key, display_name in _META_ORDER:
+        if comp_key not in {r.get("competitor") for r in meta_ad_stats.get("results", [])}:
+            if meta_ad_stats.get("failed", 0) > 0:
+                failure_details.append(f"Meta 광고({display_name}): 수집 실패")
+
+    for r in supply_stats.get("results", []):
+        status = r.get("status", "")
+        if status not in ("ok", "sheet_write_failed", ""):
+            key = (r.get("competitor", ""), r.get("region", ""))
+            mapping = _SUPPLY_DISPLAY.get(key)
+            label = f"{mapping[0]} {mapping[1]}" if mapping else f"{r.get('competitor')}/{r.get('region')}"
+            failure_details.append(f"공개방 수({label}): {status}")
+
+    for r in (app_stats or {}).get("results", []):
+        if r.get("status") == "failed":
+            comp = r.get("competitor", "")
+            platform = r.get("platform", "")
+            failure_details.append(f"앱({comp}/{platform}): 수집 실패")
+
+    if failure_details:
+        lines += ["", "*[실패 상세]*"]
+        for detail in failure_details:
+            lines.append(f"• {detail}")
+
     finished = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines += [
         "",

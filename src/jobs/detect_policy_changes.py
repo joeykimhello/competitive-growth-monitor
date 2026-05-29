@@ -219,8 +219,8 @@ async def _playwright_fetch_notice_generic(listing_url: str, competitor: str) ->
         candidates: list[str] = []
 
         try:
-            await page.goto(listing_url, wait_until="networkidle", timeout=30_000)
-            await page.wait_for_timeout(2_000)
+            await page.goto(listing_url, wait_until="domcontentloaded", timeout=60_000)
+            await page.wait_for_timeout(3_000)
             listing_html = await page.content()
 
             async def _collect_rows(locator) -> list[dict]:
@@ -316,7 +316,7 @@ async def _playwright_fetch_notice_generic(listing_url: str, competitor: str) ->
             href = post.get("url", "")
             if href:
                 try:
-                    await page.goto(href, wait_until="networkidle", timeout=30_000)
+                    await page.goto(href, wait_until="domcontentloaded", timeout=45_000)
                     await page.wait_for_timeout(1_500)
                     detail_html = await page.content()
                     detail_body = _extract_body_text(detail_html)
@@ -410,15 +410,15 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
         candidates: list[str] = []
 
         try:
-            await page.goto(listing_url, wait_until="domcontentloaded", timeout=60_000)
+            await page.goto(listing_url, wait_until="domcontentloaded", timeout=90_000)
             await page.wait_for_timeout(2_000)
 
-            # Wait for notice list signals (up to 3 × 5 s = 15 s after domcontentloaded).
+            # Wait for notice list signals (up to 5 × 5 s = 25 s after domcontentloaded).
             # Avoids failing on networkidle timeout while the list is already rendered.
             _NOTICE_SIGNALS = ["공지사항", "글번호", "제목"]
             _date_signal_re = re.compile(r'\d{4}-\d{2}-\d{2}')
             notice_visible = False
-            for _attempt in range(3):
+            for _attempt in range(5):
                 _pt = (await page.evaluate("document.body.innerText") or "")
                 if any(s in _pt for s in _NOTICE_SIGNALS) or _date_signal_re.search(_pt):
                     notice_visible = True
@@ -536,7 +536,7 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
                 return post, "", listing_html, candidates
 
             try:
-                await page.goto(href, wait_until="load", timeout=45_000)
+                await page.goto(href, wait_until="load", timeout=60_000)
                 await page.wait_for_timeout(1_500)
                 for sel in ["article", "main", "[class*='content']", "[class*='post']"]:
                     try:
