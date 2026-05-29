@@ -1,6 +1,7 @@
 .env
 *.json
 !package.json
+!package-lock.json
 .venv/
 __pycache__/
 *.pyc
@@ -11,3 +12,4 @@ data/
 .auth/
 .secrets/
 .playwright-mcp/
+node_modules/
