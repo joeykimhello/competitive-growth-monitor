@@ -24,7 +24,7 @@ from typing import Optional
 from dotenv import load_dotenv
 
 from src.jobs import collect_meta_ad_start_dates, collect_supply, detect_policy_changes, collect_app_versions
-from src.integrations.google_sheets import append_row, ensure_headers, read_sheet_rows
+from src.integrations.google_sheets import append_row, ensure_headers, read_sheet_rows, get_tab_url
 from src.integrations.google_chat import send_google_chat_message
 
 load_dotenv()
@@ -116,7 +116,7 @@ def _build_summary(
     lines = [
         f"*경쟁사 모니터링 일일 리포트* ({date})",
         "",
-        "*[Meta 광고]*",
+        f"*<{get_tab_url('meta_ad_counts')}|[Meta 광고]>*",
     ]
 
     # ── [Meta 광고] — always shown ───────────────────────────────────────────
@@ -165,7 +165,7 @@ def _build_summary(
         lines.append(f"• {display_name}: {meta_str}")
 
     # ── [Meta 30일 초과 광고] — always shown ─────────────────────────────────
-    lines += ["", "*[Meta 30일 초과 광고]*"]
+    lines += ["", f"*<{get_tab_url('meta_ad_start_dates')}|[Meta 30일 초과 광고]>*"]
     for comp_key, display_name in _META_ORDER:
         r = meta_by_key.get(comp_key)
         if r is None or r.get("status") == "failed":
@@ -175,7 +175,7 @@ def _build_summary(
             lines.append(f"• {display_name}: {long_count}개")
 
     # ── [공개방 수] — always shown ───────────────────────────────────────────
-    lines += ["", "*[공개방 수]*"]
+    lines += ["", f"*<{get_tab_url('raw_supply_snapshots')}|[공개방 수]>*"]
 
     grouped: dict[str, list[str]] = {}
     for r in supply_stats.get("results", []):
@@ -224,7 +224,7 @@ def _build_summary(
             policy_changed.setdefault(comp, []).append(r)
 
     if policy_changed:
-        lines += ["", "*[정책/공지]*"]
+        lines += ["", f"*<{get_tab_url('policy_updates')}|[정책/공지]>*"]
         for comp_key, display_name in _POLICY_ORDER:
             changed_pages = policy_changed.get(comp_key)
             if not changed_pages:
@@ -244,7 +244,7 @@ def _build_summary(
                 app_changed_set.add((r.get("competitor"), r.get("platform")))
 
     if app_changed_set:
-        lines += ["", "*[앱 업데이트]*"]
+        lines += ["", f"*<{get_tab_url('app_versions')}|[앱 업데이트]>*"]
         app_by_key: dict = {}
         for r in (app_stats or {}).get("results", []):
             app_by_key[(r.get("competitor"), r.get("platform"))] = r
@@ -256,7 +256,9 @@ def _build_summary(
                 r = app_by_key.get((comp_key, platform))
                 if r is None:
                     continue
-                plat_label = "iOS" if platform == "ios" else "Android"
+                plat_display = "iOS" if platform == "ios" else "Android"
+                store_url = r.get("store_url", "")
+                plat_label = f"<{store_url}|{plat_display}>" if store_url else plat_display
                 ver = r.get("version", "")
                 ver_str = ver if ver else "버전 없음"
                 change_ko = r.get("change_summary_ko", "")
@@ -272,7 +274,7 @@ def _build_summary(
                 desc_changed_set.add((r.get("competitor"), r.get("platform")))
 
     if desc_changed_set:
-        lines += ["", "*[앱 설명 변경]*"]
+        lines += ["", f"*<{get_tab_url('app_versions')}|[앱 설명 변경]>*"]
         app_by_key_desc: dict = {}
         for r in (app_stats or {}).get("results", []):
             app_by_key_desc[(r.get("competitor"), r.get("platform"))] = r

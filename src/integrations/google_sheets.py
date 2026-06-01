@@ -514,6 +514,30 @@ def color_cell_yellow(sheet_name: str, row_1indexed: int, col_0indexed: int) -> 
     return _set_cell_background(sheet_name, row_1indexed, col_0indexed, 1.0, 1.0, 0.0)
 
 
+def get_tab_url(tab_name: str) -> str:
+    """Return a Google Sheets URL anchored to the given tab's GID.
+
+    Uses the process-level _tab_id_cache populated by batch_format_cells.
+    Falls back to the bare spreadsheet URL if the GID cannot be resolved.
+    """
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID", "")
+    base_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit"
+    if not sheet_id:
+        return base_url
+    gid = _tab_id_cache.get(tab_name)
+    if gid is not None:
+        return f"{base_url}#gid={gid}"
+    try:
+        service = _get_service()
+        tab_id = _get_sheet_tab_id(service, sheet_id, tab_name)
+        if tab_id is not None:
+            _tab_id_cache[tab_name] = tab_id
+            return f"{base_url}#gid={tab_id}"
+    except Exception:
+        pass
+    return base_url
+
+
 def read_sheet_rows(tab_name: str) -> list[dict]:
     """Read all data rows from a tab and return as list of header-keyed dicts.
 
