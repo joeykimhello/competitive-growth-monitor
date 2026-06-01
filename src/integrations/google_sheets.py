@@ -11,6 +11,7 @@ pass a plain dict and never need to know the positional order themselves.
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any, Optional
 
@@ -29,6 +30,13 @@ _SCHEMA_PATH = Path(__file__).parents[2] / "config" / "sheet_schema.yaml"
 _schema_cache: Optional[dict] = None
 # Print credential diagnostics only once per process.
 _creds_logged = False
+
+# Retry config for write requests (HTTP 429 quota exceeded).
+_WRITE_MAX_RETRIES = 3
+_WRITE_RETRY_DELAYS = [20, 40, 80]  # seconds between retries
+
+# Cache for sheet tab IDs to avoid repeated spreadsheets().get() calls per process.
+_tab_id_cache: dict = {}
 
 
 def _load_schema() -> dict:
@@ -127,27 +135,37 @@ def append_row(sheet_name: str, row: dict) -> bool:
         print("[google_sheets] GOOGLE_APPLICATION_CREDENTIALS is not set.", file=sys.stderr)
         return False
 
-    # --- call the API ---
-    try:
-        service = _get_service()
-        service.spreadsheets().values().append(
-            spreadsheetId=sheet_id,
-            range=f"{sheet_name}!A1",
-            valueInputOption="RAW",
-            insertDataOption="INSERT_ROWS",
-            body={"values": [values]},
-        ).execute()
-        print(f"[google_sheets] append_row OK → tab='{sheet_name}'")
-        return True
-    except FileNotFoundError as exc:
-        print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
-        return False
-    except HttpError as exc:
-        print(f"[google_sheets] Sheets API error {exc.status_code}: {exc.reason}", file=sys.stderr)
-        return False
-    except Exception as exc:
-        print(f"[google_sheets] Unexpected error in append_row: {type(exc).__name__}: {exc}", file=sys.stderr)
-        return False
+    # --- call the API (retry up to _WRITE_MAX_RETRIES times on HTTP 429) ---
+    for attempt in range(_WRITE_MAX_RETRIES + 1):
+        try:
+            service = _get_service()
+            service.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range=f"{sheet_name}!A1",
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body={"values": [values]},
+            ).execute()
+            print(f"[google_sheets] append_row OK → tab='{sheet_name}'")
+            return True
+        except HttpError as exc:
+            if exc.status_code == 429 and attempt < _WRITE_MAX_RETRIES:
+                delay = _WRITE_RETRY_DELAYS[attempt]
+                print(
+                    f"[google_sheets] 429 quota — retry {attempt + 1}/{_WRITE_MAX_RETRIES} in {delay}s",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+            else:
+                print(f"[google_sheets] Sheets API error {exc.status_code}: {exc.reason}", file=sys.stderr)
+                return False
+        except FileNotFoundError as exc:
+            print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
+            return False
+        except Exception as exc:
+            print(f"[google_sheets] Unexpected error in append_row: {type(exc).__name__}: {exc}", file=sys.stderr)
+            return False
+    return False
 
 
 def append_rows(tab: str, rows: list[list[Any]]) -> dict:
@@ -261,29 +279,198 @@ def append_row_get_index(sheet_name: str, row: dict) -> Optional[int]:
         print("[google_sheets] GOOGLE_APPLICATION_CREDENTIALS is not set.", file=sys.stderr)
         return None
 
+    for attempt in range(_WRITE_MAX_RETRIES + 1):
+        try:
+            service = _get_service()
+            result = service.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range=f"{sheet_name}!A1",
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body={"values": [values]},
+            ).execute()
+            updated_range = result.get("updates", {}).get("updatedRange", "")
+            # Parse row number from "TabName!A42:M42" → last segment "M42" → digits "42"
+            row_part = updated_range.split("!")[-1].split(":")[-1]
+            digits = "".join(c for c in row_part if c.isdigit())
+            return int(digits) if digits else None
+        except HttpError as exc:
+            if exc.status_code == 429 and attempt < _WRITE_MAX_RETRIES:
+                delay = _WRITE_RETRY_DELAYS[attempt]
+                print(
+                    f"[google_sheets] 429 quota — retry {attempt + 1}/{_WRITE_MAX_RETRIES} in {delay}s",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+            else:
+                print(f"[google_sheets] Sheets API error {exc.status_code}: {exc.reason}", file=sys.stderr)
+                return None
+        except FileNotFoundError as exc:
+            print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
+            return None
+        except Exception as exc:
+            print(f"[google_sheets] Unexpected error: {exc}", file=sys.stderr)
+            return None
+    return None
+
+
+def append_rows_dicts(tab_name: str, rows: list[dict]) -> Optional[int]:
+    """Append multiple rows (as dicts) in one API call.
+
+    Identical schema ordering as append_row. Retries on HTTP 429.
+
+    Returns the 1-indexed row number of the first written row, or None on failure.
+    """
+    if not rows:
+        return None
     try:
-        service = _get_service()
-        result = service.spreadsheets().values().append(
-            spreadsheetId=sheet_id,
-            range=f"{sheet_name}!A1",
-            valueInputOption="RAW",
-            insertDataOption="INSERT_ROWS",
-            body={"values": [values]},
-        ).execute()
-        updated_range = result.get("updates", {}).get("updatedRange", "")
-        # Parse row number from "TabName!A42:M42" → last segment "M42" → digits "42"
-        row_part = updated_range.split("!")[-1].split(":")[-1]
-        digits = "".join(c for c in row_part if c.isdigit())
-        return int(digits) if digits else None
-    except FileNotFoundError as exc:
-        print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
+        columns = _column_names(tab_name)
+    except KeyError as exc:
+        print(f"[google_sheets] Schema error: {exc}", file=sys.stderr)
         return None
-    except HttpError as exc:
-        print(f"[google_sheets] Sheets API error {exc.status_code}: {exc.reason}", file=sys.stderr)
+    except (FileNotFoundError, yaml.YAMLError) as exc:
+        print(f"[google_sheets] Failed to load sheet_schema.yaml: {exc}", file=sys.stderr)
         return None
-    except Exception as exc:
-        print(f"[google_sheets] Unexpected error: {exc}", file=sys.stderr)
+
+    values = [
+        ["" if row.get(col) is None else str(row[col]) for col in columns]
+        for row in rows
+    ]
+
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    if not sheet_id:
+        print("[google_sheets] GOOGLE_SHEET_ID is not set.", file=sys.stderr)
         return None
+    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        print("[google_sheets] GOOGLE_APPLICATION_CREDENTIALS is not set.", file=sys.stderr)
+        return None
+
+    for attempt in range(_WRITE_MAX_RETRIES + 1):
+        try:
+            service = _get_service()
+            result = service.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range=f"{tab_name}!A1",
+                valueInputOption="RAW",
+                insertDataOption="INSERT_ROWS",
+                body={"values": values},
+            ).execute()
+            updated_range = result.get("updates", {}).get("updatedRange", "")
+            # Parse start row from "TabName!A42:M68" → "A42" → 42
+            range_part = updated_range.split("!")[-1] if "!" in updated_range else ""
+            start_cell = range_part.split(":")[0] if range_part else ""
+            digits = "".join(c for c in start_cell if c.isdigit())
+            start_row = int(digits) if digits else None
+            print(
+                f"[google_sheets] append_rows_dicts OK → tab='{tab_name}'"
+                f" rows={len(rows)} start_row={start_row}"
+            )
+            return start_row
+        except HttpError as exc:
+            if exc.status_code == 429 and attempt < _WRITE_MAX_RETRIES:
+                delay = _WRITE_RETRY_DELAYS[attempt]
+                print(
+                    f"[google_sheets] 429 quota — retry {attempt + 1}/{_WRITE_MAX_RETRIES} in {delay}s",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+            else:
+                print(f"[google_sheets] Sheets API error {exc.status_code}: {exc.reason}", file=sys.stderr)
+                return None
+        except FileNotFoundError as exc:
+            print(f"[google_sheets] Credentials file not found: {exc}", file=sys.stderr)
+            return None
+        except Exception as exc:
+            print(
+                f"[google_sheets] Unexpected error in append_rows_dicts: {type(exc).__name__}: {exc}",
+                file=sys.stderr,
+            )
+            return None
+    return None
+
+
+def batch_format_cells(sheet_name: str, cell_colors: list[tuple]) -> bool:
+    """Apply background colors to multiple cells in one batchUpdate API call.
+
+    Args:
+        sheet_name:  Tab name.
+        cell_colors: List of (row_1indexed, col_0indexed, red, green, blue) tuples.
+
+    Returns True on success (or if cell_colors is empty), False on error.
+    Retries up to _WRITE_MAX_RETRIES times on HTTP 429.
+    """
+    if not cell_colors:
+        return True
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    if not sheet_id or not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        return False
+
+    # Resolve tab_id once (cached per process) — avoids a spreadsheets().get() per retry.
+    if sheet_name not in _tab_id_cache:
+        try:
+            service = _get_service()
+            tab_id = _get_sheet_tab_id(service, sheet_id, sheet_name)
+            if tab_id is None:
+                print(
+                    f"[google_sheets] Tab '{sheet_name}' not found — cannot batch format cells",
+                    file=sys.stderr,
+                )
+                return False
+            _tab_id_cache[sheet_name] = tab_id
+        except Exception as exc:
+            print(f"[google_sheets] batch_format_cells tab lookup error: {exc}", file=sys.stderr)
+            return False
+
+    tab_id = _tab_id_cache[sheet_name]
+    requests_body = [
+        {
+            "repeatCell": {
+                "range": {
+                    "sheetId": tab_id,
+                    "startRowIndex": row_1indexed - 1,
+                    "endRowIndex": row_1indexed,
+                    "startColumnIndex": col_0indexed,
+                    "endColumnIndex": col_0indexed + 1,
+                },
+                "cell": {
+                    "userEnteredFormat": {
+                        "backgroundColor": {"red": r, "green": g, "blue": b},
+                    }
+                },
+                "fields": "userEnteredFormat.backgroundColor",
+            }
+        }
+        for (row_1indexed, col_0indexed, r, g, b) in cell_colors
+    ]
+
+    for attempt in range(_WRITE_MAX_RETRIES + 1):
+        try:
+            service = _get_service()
+            service.spreadsheets().batchUpdate(
+                spreadsheetId=sheet_id, body={"requests": requests_body}
+            ).execute()
+            print(
+                f"[google_sheets] batch_format_cells OK → tab='{sheet_name}' cells={len(cell_colors)}"
+            )
+            return True
+        except HttpError as exc:
+            if exc.status_code == 429 and attempt < _WRITE_MAX_RETRIES:
+                delay = _WRITE_RETRY_DELAYS[attempt]
+                print(
+                    f"[google_sheets] batch_format_cells 429 — retry {attempt + 1}/{_WRITE_MAX_RETRIES} in {delay}s",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+            else:
+                print(
+                    f"[google_sheets] batch_format_cells API error {exc.status_code}: {exc.reason}",
+                    file=sys.stderr,
+                )
+                return False
+        except Exception as exc:
+            print(f"[google_sheets] batch_format_cells error: {type(exc).__name__}: {exc}", file=sys.stderr)
+            return False
+    return False
 
 
 def _set_cell_background(
@@ -294,49 +481,14 @@ def _set_cell_background(
     green: float,
     blue: float,
 ) -> bool:
-    """Set background color of a single cell via batchUpdate (shared helper)."""
-    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
-    if not sheet_id or not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-        return False
-    try:
-        service = _get_service()
-        tab_id = _get_sheet_tab_id(service, sheet_id, sheet_name)
-        if tab_id is None:
-            print(
-                f"[google_sheets] Tab '{sheet_name}' not found — cannot set cell background",
-                file=sys.stderr,
-            )
-            return False
-        body = {
-            "requests": [{
-                "repeatCell": {
-                    "range": {
-                        "sheetId": tab_id,
-                        "startRowIndex": row_1indexed - 1,
-                        "endRowIndex": row_1indexed,
-                        "startColumnIndex": col_0indexed,
-                        "endColumnIndex": col_0indexed + 1,
-                    },
-                    "cell": {
-                        "userEnteredFormat": {
-                            "backgroundColor": {"red": red, "green": green, "blue": blue},
-                        }
-                    },
-                    "fields": "userEnteredFormat.backgroundColor",
-                }
-            }]
-        }
-        service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=body).execute()
-        return True
-    except HttpError as exc:
-        print(
-            f"[google_sheets] set_cell_background API error {exc.status_code}: {exc.reason}",
-            file=sys.stderr,
-        )
-        return False
-    except Exception as exc:
-        print(f"[google_sheets] set_cell_background error: {exc}", file=sys.stderr)
-        return False
+    """Set background color of a single cell via batchUpdate (shared helper).
+
+    Retries on HTTP 429. Prefer batch_format_cells for multiple cells.
+    """
+    return batch_format_cells(
+        sheet_name,
+        [(row_1indexed, col_0indexed, red, green, blue)],
+    )
 
 
 def clear_cell_background(sheet_name: str, row_1indexed: int, col_0indexed: int) -> bool:

@@ -43,9 +43,8 @@ from dotenv import load_dotenv
 from src.collectors.ads import meta_ad_library
 from src.integrations.google_sheets import (
     append_row,
-    append_row_get_index,
-    clear_cell_background,
-    color_cell_yellow,
+    append_rows_dicts,
+    batch_format_cells,
     ensure_headers,
 )
 
@@ -249,15 +248,7 @@ def run() -> dict:
 
         if collector_result["status"] == "failed":
             total_failed += 1
-            results.append({
-                "competitor": competitor_key,
-                "display_name": display_name,
-                "status": "failed",
-                "written": 0,
-                "dupes": 0,
-                "displayed_meta_count": None,
-            })
-            append_row("meta_ad_counts", {
+            counts_ok = append_row("meta_ad_counts", {
                 "date": today,
                 "collected_at": collected_at,
                 "competitor": competitor_key,
@@ -267,6 +258,20 @@ def run() -> dict:
                 "error_message": collector_result.get("error", ""),
                 "source_url": source_url,
             })
+            if not counts_ok:
+                print(
+                    f"  [WARN] meta_ad_counts write failed for {competitor_key}",
+                    file=sys.stderr,
+                )
+            results.append({
+                "competitor": competitor_key,
+                "display_name": display_name,
+                "status": "failed",
+                "written": 0,
+                "dupes": 0,
+                "displayed_meta_count": None,
+                "meta_count_sheet_ok": counts_ok,
+            })
             continue
 
         creatives = collector_result.get("creatives", [])
@@ -274,6 +279,8 @@ def run() -> dict:
         written = 0
         dupes = 0
         long_running_count = 0
+        batch_rows: list[dict] = []
+        batch_highlights: list[int] = []  # 0-based indices within batch_rows
 
         for creative in creatives:
             library_id = creative.get("library_id", "")
@@ -326,6 +333,7 @@ def run() -> dict:
 
             if highlight:
                 long_running_count += 1
+                batch_highlights.append(len(batch_rows))
 
             if debug_rows_logged < 10:
                 print(
@@ -336,18 +344,25 @@ def run() -> dict:
                 )
                 debug_rows_logged += 1
 
-            row_index = append_row_get_index(_TAB, row)
-            if row_index is not None:
-                written += 1
-                # INSERT_ROWS inherits formatting from the row above — always clear first
-                clear_cell_background(_TAB, row_index, _AD_START_DATE_COL)
+            batch_rows.append(row)
+
+        # Write all rows for this competitor in one API call, then batch-format cells
+        if batch_rows:
+            start_row = append_rows_dicts(_TAB, batch_rows)
+            if start_row is not None:
+                written = len(batch_rows)
+                # Clear all ad_start_date cells first (INSERT_ROWS inherits formatting)
+                cell_colors = [
+                    (start_row + i, _AD_START_DATE_COL, 1.0, 1.0, 1.0)
+                    for i in range(len(batch_rows))
+                ]
                 # 한 달 초과 게재 중인 광고 — ad_start_date 셀만 노란색 표시
-                if highlight:
-                    color_cell_yellow(_TAB, row_index, _AD_START_DATE_COL)
+                for hi in batch_highlights:
+                    cell_colors.append((start_row + hi, _AD_START_DATE_COL, 1.0, 1.0, 0.0))
+                batch_format_cells(_TAB, cell_colors)
             else:
                 print(
-                    f"  [WARN] Sheet write failed for {display_name} "
-                    f"library_id={library_id or '(blank)'}",
+                    f"  [WARN] Batch sheet write failed for {display_name}",
                     file=sys.stderr,
                 )
 
@@ -363,16 +378,7 @@ def run() -> dict:
             f" long_running_count={long_running_count}"
         )
         total_written += written
-        results.append({
-            "competitor": competitor_key,
-            "display_name": display_name,
-            "status": collector_result["status"],
-            "written": written,
-            "dupes": dupes,
-            "displayed_meta_count": displayed_meta_count,
-            "long_running_count": long_running_count,
-        })
-        append_row("meta_ad_counts", {
+        counts_ok = append_row("meta_ad_counts", {
             "date": today,
             "collected_at": collected_at,
             "competitor": competitor_key,
@@ -381,6 +387,21 @@ def run() -> dict:
             "status": collector_result["status"],
             "error_message": "",
             "source_url": source_url,
+        })
+        if not counts_ok:
+            print(
+                f"  [WARN] meta_ad_counts write failed for {competitor_key}",
+                file=sys.stderr,
+            )
+        results.append({
+            "competitor": competitor_key,
+            "display_name": display_name,
+            "status": collector_result["status"],
+            "written": written,
+            "dupes": dupes,
+            "displayed_meta_count": displayed_meta_count,
+            "long_running_count": long_running_count,
+            "meta_count_sheet_ok": counts_ok,
         })
 
     print(

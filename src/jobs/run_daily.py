@@ -17,6 +17,7 @@ All Google Chat messages are in Korean. No per-page English alerts are sent.
 """
 
 import sys
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -358,6 +359,9 @@ def run() -> None:
     except Exception as exc:
         print(f"[ERROR] collect_meta_ad_start_dates failed: {exc}", file=sys.stderr)
         meta_ad_stats["failed"] += len(_META_ORDER)
+
+    # Brief pause so Sheets write quota from meta collection can partially recover
+    time.sleep(5)
 
     # ── Workflow 2: Supply collection ────────────────────────────────────────
     print("\n>>> [2/4] 방 개수 수집")
