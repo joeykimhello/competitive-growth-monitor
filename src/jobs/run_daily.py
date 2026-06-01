@@ -18,7 +18,7 @@ All Google Chat messages are in Korean. No per-page English alerts are sent.
 
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -105,6 +105,53 @@ def _get_previous_meta_counts(today: str) -> dict:
     return result
 
 
+def _supply_delta(diff: int) -> str:
+    return f"+{diff:,}" if diff > 0 else ("0" if diff == 0 else f"{diff:,}")
+
+
+def _get_supply_history(today: str) -> dict:
+    """Return previous-day and 7-day-ago counts for each (competitor, region).
+
+    Reads raw_supply_snapshots. Exact 7-day match only — no approximation.
+    Returns: {(competitor, region): {"prev_count": int|None, "week_count": int|None}}
+    """
+    rows = read_sheet_rows("raw_supply_snapshots")
+    week_ago = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=7)).strftime("%Y-%m-%d")
+
+    by_cr: dict = {}
+    for row in rows:
+        d = row.get("date", "")
+        comp = row.get("competitor", "")
+        region = row.get("region", "")
+        cnt_str = row.get("count", "")
+        if not d or not comp or not region or not cnt_str:
+            continue
+        try:
+            cnt = int(cnt_str)
+        except (ValueError, TypeError):
+            continue
+        by_cr.setdefault((comp, region), []).append((d, cnt))
+
+    result = {}
+    for (comp, region), entries in by_cr.items():
+        entries.sort(key=lambda x: x[0], reverse=True)
+
+        prev_count = None
+        for d, cnt in entries:
+            if d < today:
+                prev_count = cnt
+                break
+
+        week_count = None
+        for d, cnt in entries:
+            if d == week_ago:
+                week_count = cnt
+                break
+
+        result[(comp, region)] = {"prev_count": prev_count, "week_count": week_count}
+    return result
+
+
 def _build_summary(
     date: str,
     meta_ad_stats: dict,
@@ -177,31 +224,52 @@ def _build_summary(
     # ── [공개방 수] — always shown ───────────────────────────────────────────
     lines += ["", f"*<{get_tab_url('raw_supply_snapshots')}|[공개방 수]>*"]
 
-    grouped: dict[str, list[str]] = {}
+    supply_history = _get_supply_history(date)
+
+    # Build per-(display_comp) → list of (display_region, count, status, comp_key, region_key)
+    comp_region_entries: dict[str, list] = {}
     for r in supply_stats.get("results", []):
         key = (r.get("competitor", ""), r.get("region", ""))
         mapping = _SUPPLY_DISPLAY.get(key)
         if mapping is None:
             continue
         display_comp, display_region = mapping
-        count = r.get("count")
-        status = r.get("status", "failed")
-        if count is not None and status == "sheet_write_failed":
-            entry = f"{display_region} {count:,}개 (시트 저장 실패)"
-        elif count is not None:
-            entry = f"{display_region} {count:,}개"
-        elif status == "login_required":
-            entry = f"{display_region} 로그인 필요"
-        elif status == "sheet_write_failed":
-            entry = f"{display_region} 시트 저장 실패"
-        else:
-            entry = f"{display_region} 수집 실패"
-        grouped.setdefault(display_comp, []).append(entry)
+        comp_region_entries.setdefault(display_comp, []).append((
+            display_region,
+            r.get("count"),
+            r.get("status", "failed"),
+            r.get("competitor", ""),
+            r.get("region", ""),
+        ))
 
+    first_comp = True
     for display_comp in _SUPPLY_ORDER:
-        entries = grouped.get(display_comp)
-        if entries:
-            lines.append(f"• {display_comp}: {', '.join(entries)}")
+        entries = comp_region_entries.get(display_comp)
+        if not entries:
+            continue
+        if not first_comp:
+            lines.append("")
+        first_comp = False
+        for display_region, count, status, comp_key, region_key in entries:
+            if count is not None and status == "sheet_write_failed":
+                count_str = f"{count:,}개 (시트 저장 실패)"
+            elif count is not None:
+                count_str = f"{count:,}개"
+            elif status == "login_required":
+                count_str = "로그인 필요"
+            elif status == "sheet_write_failed":
+                count_str = "시트 저장 실패"
+            else:
+                count_str = "수집 실패"
+            lines.append(f"• {display_comp} {display_region}: {count_str}")
+
+            if count is not None:
+                hist = supply_history.get((comp_key, region_key), {})
+                prev_c = hist.get("prev_count")
+                week_c = hist.get("week_count")
+                prev_part = f"전일 {_supply_delta(count - prev_c)}" if prev_c is not None else "전일 데이터 없음"
+                week_part = f"7일전 {_supply_delta(count - week_c)}" if week_c is not None else "7일전 데이터 없음"
+                lines.append(f"  ↳ {prev_part} / {week_part}")
 
     # ── [시트 기록 실패] — only shown when meta_ad_counts write failed ─────────
     meta_count_write_failed = [
