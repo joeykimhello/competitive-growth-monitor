@@ -413,12 +413,12 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
             await page.goto(listing_url, wait_until="domcontentloaded", timeout=90_000)
             await page.wait_for_timeout(2_000)
 
-            # Wait for notice list signals (up to 5 × 5 s = 25 s after domcontentloaded).
+            # Wait for notice list signals (up to 7 × 5 s = 35 s after domcontentloaded).
             # Avoids failing on networkidle timeout while the list is already rendered.
             _NOTICE_SIGNALS = ["공지사항", "글번호", "제목"]
             _date_signal_re = re.compile(r'\d{4}-\d{2}-\d{2}')
             notice_visible = False
-            for _attempt in range(5):
+            for _attempt in range(7):
                 _pt = (await page.evaluate("document.body.innerText") or "")
                 if any(s in _pt for s in _NOTICE_SIGNALS) or _date_signal_re.search(_pt):
                     notice_visible = True
@@ -426,11 +426,22 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
                 await page.wait_for_timeout(5_000)
 
             if not notice_visible:
-                print(
-                    f"  [WARN] LiveAnywhere notice list not visible after retries",
-                    file=sys.stderr,
-                )
-                return None, "", None, ["listing_timeout"]
+                # Try BS4 on partial HTML before declaring timeout.
+                _partial_html = await page.content()
+                _bs4_early = _parse_liveanywhere_notices_bs4(_partial_html, listing_url)
+                if _bs4_early:
+                    print(
+                        f"  [LiveAnywhere] signal timed out but BS4 found {len(_bs4_early)} posts — continuing",
+                        file=sys.stderr,
+                    )
+                    listing_html = _partial_html
+                    notice_visible = True
+                else:
+                    print(
+                        f"  [WARN] LiveAnywhere notice list not visible after retries",
+                        file=sys.stderr,
+                    )
+                    return None, "", None, ["listing_timeout"]
 
             # Click '전체' tab to show all notices
             try:
@@ -727,6 +738,11 @@ def run() -> dict:
                 post, raw_text, html, candidates = asyncio.run(
                     _playwright_fetch_liveanywhere(url)
                 )
+                if html is None:
+                    print(f"  [LiveAnywhere] 1차 실패, 재시도 중…", file=sys.stderr)
+                    post, raw_text, html, candidates = asyncio.run(
+                        _playwright_fetch_liveanywhere(url)
+                    )
                 post_from_playwright = True
                 if post and any("detail_navigation_failed" in c for c in candidates):
                     detail_nav_failed = True

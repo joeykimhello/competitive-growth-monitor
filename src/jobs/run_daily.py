@@ -209,17 +209,10 @@ def _build_summary(
                 f" delta={delta} delta_label={delta_str}"
                 f" long_running_30d_exceeded_count={long_count}"
             )
-        lines.append(f"• {display_name}: {meta_str}")
+            lines.append(f"• {display_name}: {meta_str} / 30일 초과 {long_count}개")
+            continue
 
-    # ── [Meta 30일 초과 광고] — always shown ─────────────────────────────────
-    lines += ["", f"*<{get_tab_url('meta_ad_start_dates')}|[Meta 30일 초과 광고]>*"]
-    for comp_key, display_name in _META_ORDER:
-        r = meta_by_key.get(comp_key)
-        if r is None or r.get("status") == "failed":
-            lines.append(f"• {display_name}: 수집 실패")
-        else:
-            long_count = r.get("long_running_count", 0)
-            lines.append(f"• {display_name}: {long_count}개")
+        lines.append(f"• {display_name}: 수집 실패")
 
     # ── [공개방 수] — always shown ───────────────────────────────────────────
     lines += ["", f"*<{get_tab_url('raw_supply_snapshots')}|[공개방 수]>*"]
