@@ -411,34 +411,36 @@ async def _playwright_fetch_liveanywhere(listing_url: str) -> tuple:
 
         try:
             await page.goto(listing_url, wait_until="domcontentloaded", timeout=90_000)
-            await page.wait_for_timeout(2_000)
 
-            # Wait for notice list signals (up to 7 × 5 s = 35 s after domcontentloaded).
-            # Avoids failing on networkidle timeout while the list is already rendered.
-            _NOTICE_SIGNALS = ["공지사항", "글번호", "제목"]
-            _date_signal_re = re.compile(r'\d{4}-\d{2}-\d{2}')
+            # Soft networkidle wait — gives JS time to finish XHR after shell loads.
+            # Timeout is ignored; we continue regardless.
+            try:
+                await page.wait_for_load_state("networkidle", timeout=15_000)
+            except Exception:
+                pass
+
+            # Wait for the exact anchor element BS4 will parse.
+            # Fires the moment the element appears — no polling delay.
             notice_visible = False
-            for _attempt in range(7):
-                _pt = (await page.evaluate("document.body.innerText") or "")
-                if any(s in _pt for s in _NOTICE_SIGNALS) or _date_signal_re.search(_pt):
-                    notice_visible = True
-                    break
-                await page.wait_for_timeout(5_000)
+            try:
+                await page.wait_for_selector('a[href*="bmode=view"]', timeout=20_000)
+                notice_visible = True
+            except Exception:
+                pass
 
             if not notice_visible:
-                # Try BS4 on partial HTML before declaring timeout.
+                # BS4 fallback on partial HTML before declaring timeout.
                 _partial_html = await page.content()
                 _bs4_early = _parse_liveanywhere_notices_bs4(_partial_html, listing_url)
                 if _bs4_early:
                     print(
-                        f"  [LiveAnywhere] signal timed out but BS4 found {len(_bs4_early)} posts — continuing",
+                        f"  [LiveAnywhere] selector timed out but BS4 found {len(_bs4_early)} posts — continuing",
                         file=sys.stderr,
                     )
                     listing_html = _partial_html
-                    notice_visible = True
                 else:
                     print(
-                        f"  [WARN] LiveAnywhere notice list not visible after retries",
+                        f"  [WARN] LiveAnywhere notice list not visible after selector wait",
                         file=sys.stderr,
                     )
                     return None, "", None, ["listing_timeout"]
