@@ -220,7 +220,22 @@ async def _playwright_fetch_notice_generic(listing_url: str, competitor: str) ->
 
         try:
             await page.goto(listing_url, wait_until="domcontentloaded", timeout=60_000)
-            await page.wait_for_timeout(3_000)
+
+            # Soft networkidle wait — lets JS finish XHR before DOM inspection.
+            try:
+                await page.wait_for_load_state("networkidle", timeout=15_000)
+            except Exception:
+                pass
+
+            # Wait for any element containing a date pattern to appear.
+            try:
+                await page.wait_for_selector(
+                    ":text-matches('\\d{4}[.\\-/]\\d{1,2}[.\\-/]\\d{1,2}')",
+                    timeout=20_000,
+                )
+            except Exception:
+                pass
+
             listing_html = await page.content()
 
             async def _collect_rows(locator) -> list[dict]:
