@@ -126,16 +126,23 @@ async def _collect(
                 return {"count": None, "raw_count_text": "", "status": "login_required", "error": "airdna_login_required"}
 
             # ── Retry loop: wait up to ~20 s for meaningful content ──────────
+            # Break only when both the label AND the count number have rendered.
+            # The label appears ~5 s before the number; breaking on label alone
+            # causes all strategies to fail (no number in text yet).
             page_text = ""
             for attempt in range(4):
                 await page.wait_for_timeout(5_000)
                 page_text = (await page.evaluate("document.body.innerText") or "").strip()
                 has_tal = "Total Active Listings" in page_text
+                has_number_loaded = has_tal and bool(
+                    re.search(r"Total\s+Active\s+Listings[\s\S]{0,80}\d{4,}", page_text)
+                )
                 print(
                     f"  [DEBUG] airdna attempt={attempt + 1} url={page.url} "
-                    f"text_len={len(page_text)} has_total_active_listings={has_tal}"
+                    f"text_len={len(page_text)} has_total_active_listings={has_tal} "
+                    f"has_number_loaded={has_number_loaded}"
                 )
-                if has_tal or len(page_text) > 2000:
+                if has_number_loaded or len(page_text) > 5000:
                     break
 
             # ── Login-wall check (after content loads) ───────────────────────
