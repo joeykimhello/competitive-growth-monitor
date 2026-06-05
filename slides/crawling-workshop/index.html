@@ -9,19 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:      #f5f7ff;
+  --bg:      #f0f0f0;
   --surface: #ffffff;
-  --border:  #e0e6f0;
-  --shadow:  0 1px 4px rgba(74,108,247,.08),0 0 0 1px rgba(74,108,247,.06);
-  --accent:  #4A6CF7;
-  --accent2: #3a5ce8;
-  --green:   #059669;
-  --purple:  #7c3aed;
-  --warn:    #d97706;
-  --red:     #dc2626;
-  --txt:     #111827;
-  --txt2:    #4b5563;
-  --txt3:    #9ca3af;
+  --border:  #e0e0e0;
+  --shadow:  0 1px 3px rgba(0,0,0,.09),0 0 0 1px rgba(0,0,0,.05);
+  --accent:  #00E676;
+  --accent2: #00C853;
+  --green-t: #005c2a;
+  --err:     #c62828;
+  --txt:     #0a0a0a;
+  --txt2:    #444444;
+  --txt3:    #8a8a8a;
   --font-d:  'Archivo Black', sans-serif;
   --font-b:  'Space Grotesk', sans-serif;
   --ease:    cubic-bezier(0.16,1,0.3,1);
@@ -50,14 +48,14 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--txt);overflow-x:
 .slide::before{
   content:'';position:absolute;inset:0;pointer-events:none;
   background-image:
-    linear-gradient(rgba(74,108,247,.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(74,108,247,.025) 1px,transparent 1px);
+    linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);
   background-size:52px 52px;
 }
 .slide::after{
   content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,var(--accent),#818CF8);
-  opacity:.2;pointer-events:none;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  pointer-events:none;
 }
 
 .slide-inner{
@@ -67,7 +65,7 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--txt);overflow-x:
 .sn{
   position:absolute;top:calc(var(--p)*.35);left:var(--p);
   font-family:var(--font-d);font-size:var(--tn);
-  color:rgba(74,108,247,.07);line-height:1;
+  color:rgba(0,0,0,.06);line-height:1;
   letter-spacing:-.04em;pointer-events:none;user-select:none;
 }
 .bc{
@@ -79,21 +77,21 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--txt);overflow-x:
   text-transform:uppercase;color:var(--txt3);
   padding:2px 7px;border-radius:3px;transition:color .3s,background .3s;
 }
-.bc-item.on{color:#fff;background:var(--accent)}
+.bc-item.on{color:#0a0a0a;background:var(--accent)}
 
 .content{
   flex:1;display:flex;flex-direction:column;
   justify-content:center;gap:var(--g);
   padding-top:clamp(1.5rem,4.5vh,3.5rem);overflow:hidden;
 }
-.lbl{font-size:var(--tl);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lbl{font-size:var(--tl);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green-t)}
 h1{font-family:var(--font-d);font-size:var(--t1);line-height:1.1;letter-spacing:-.02em;color:var(--txt)}
 h2{font-family:var(--font-d);font-size:var(--t2);line-height:1.15;letter-spacing:-.02em;color:var(--txt)}
 h3{font-family:var(--font-b);font-size:var(--t3);font-weight:700;line-height:1.3;color:var(--txt)}
 p{font-size:var(--tb);line-height:1.65;color:var(--txt2)}
 code{
   font-family:'JetBrains Mono','Courier New',monospace;
-  background:rgba(74,108,247,.09);color:var(--accent2);
+  background:rgba(0,0,0,.07);color:var(--txt);
   padding:1px 5px;border-radius:3px;font-size:.87em;
 }
 
@@ -102,11 +100,11 @@ code{
   border-radius:10px;padding:clamp(.55rem,1.1vw,1rem);
   box-shadow:var(--shadow);
 }
-.card.b{border-color:rgba(74,108,247,.28);background:rgba(74,108,247,.04)}
-.card.g{border-color:rgba(5,150,105,.24);background:rgba(5,150,105,.04)}
-.card.p{border-color:rgba(124,58,237,.24);background:rgba(124,58,237,.04)}
-.card.w{border-color:rgba(217,119,6,.24);background:rgba(217,119,6,.04)}
-.card.r{border-color:rgba(220,38,38,.24);background:rgba(220,38,38,.04)}
+.card.b{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.06)}
+.card.g{border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.06)}
+.card.p{border-color:rgba(0,0,0,.18);background:rgba(0,0,0,.04)}
+.card.w{border-color:rgba(0,0,0,.12);background:rgba(0,0,0,.03)}
+.card.r{border-color:rgba(198,40,40,.28);background:rgba(198,40,40,.04)}
 
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:var(--ge)}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--ge)}
@@ -118,12 +116,12 @@ code{
   font-size:var(--tl);font-weight:700;
   padding:2px 7px;border-radius:4px;letter-spacing:.04em;
 }
-.bk{background:rgba(74,108,247,.12);color:var(--accent2)}
-.bg{background:rgba(5,150,105,.12);color:#047857}
-.bp{background:rgba(124,58,237,.12);color:#6d28d9}
-.bw{background:rgba(217,119,6,.12);color:#b45309}
+.bk{background:rgba(0,230,118,.18);color:var(--green-t)}
+.bg{background:rgba(0,0,0,.08);color:var(--txt2)}
+.bp{background:rgba(0,0,0,.08);color:var(--txt2)}
+.bw{background:rgba(0,0,0,.08);color:var(--txt2)}
 .bo{background:rgba(0,0,0,.06);color:var(--txt3)}
-.br{background:rgba(220,38,38,.1);color:#b91c1c}
+.br{background:rgba(198,40,40,.1);color:var(--err)}
 
 .pipe{display:flex;align-items:center;gap:var(--ge);flex-wrap:wrap}
 .pbox{
@@ -132,24 +130,24 @@ code{
   font-size:var(--ts);font-weight:600;text-align:center;flex:1;min-width:55px;
   box-shadow:var(--shadow);
 }
-.pbox.b{border-color:rgba(74,108,247,.28);color:var(--accent);background:rgba(74,108,247,.06)}
-.pbox.g{border-color:rgba(5,150,105,.28);color:#047857;background:rgba(5,150,105,.06)}
-.pbox.p{border-color:rgba(124,58,237,.28);color:#6d28d9;background:rgba(124,58,237,.06)}
+.pbox.b{border-color:rgba(0,230,118,.4);color:var(--green-t);background:rgba(0,230,118,.07)}
+.pbox.g{border-color:rgba(0,230,118,.4);color:var(--green-t);background:rgba(0,230,118,.07)}
+.pbox.p{border-color:rgba(0,0,0,.18);color:var(--txt2);background:rgba(0,0,0,.04)}
 .parr{color:var(--txt3);font-size:1.1em;flex-shrink:0}
 
 .term{
-  background:#1e293b;border:1px solid rgba(255,255,255,.06);
+  background:#111111;border:1px solid rgba(255,255,255,.08);
   border-radius:10px;padding:clamp(7px,1.1vw,13px) clamp(9px,1.4vw,15px);
   font-family:'JetBrains Mono','Courier New',monospace;
   font-size:var(--ts);line-height:1.72;overflow:hidden;
 }
-.term .b {color:#f1f5f9;font-weight:700}
-.term .d {color:rgba(241,245,249,.42)}
-.term .up{color:#34D399}
-.term .dn{color:#f87171}
-.term .nw{color:#fbbf24}
-.term .bl{color:#818CF8}
-.term .cm{color:rgba(241,245,249,.26);font-style:italic}
+.term .b {color:#f5f5f5;font-weight:700}
+.term .d {color:rgba(245,245,245,.4)}
+.term .up{color:#00FF88}
+.term .dn{color:#ff6b6b}
+.term .nw{color:#00FF88}
+.term .bl{color:#b0b0b0}
+.term .cm{color:rgba(245,245,245,.25);font-style:italic}
 
 /* 프롬프트 컨텍스트 카드 */
 .ctx-card{
@@ -160,13 +158,13 @@ code{
 }
 .ctx-num{
   width:clamp(20px,1.9vw,25px);height:clamp(20px,1.9vw,25px);
-  border-radius:6px;background:var(--accent);flex-shrink:0;
+  border-radius:6px;background:#0a0a0a;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   font-size:var(--tl);font-weight:700;color:#fff;margin-top:1px;
 }
-.ctx-num.g{background:var(--green)}
-.ctx-num.p{background:var(--purple)}
-.ctx-num.w{background:var(--warn)}
+.ctx-num.g{background:var(--accent);color:#0a0a0a}
+.ctx-num.p{background:#555;color:#fff}
+.ctx-num.w{background:#888;color:#fff}
 .ctx-body{font-size:var(--ts);line-height:1.55}
 .ctx-body strong{color:var(--txt);display:block;margin-bottom:2px;font-size:var(--tb)}
 .ctx-body span{color:var(--txt2)}
@@ -182,7 +180,7 @@ code{
 .step{display:flex;gap:clamp(7px,1vw,12px);align-items:flex-start}
 .step-n{
   width:clamp(19px,1.8vw,24px);height:clamp(19px,1.8vw,24px);
-  border-radius:50%;background:var(--accent);flex-shrink:0;
+  border-radius:50%;background:#0a0a0a;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   font-size:var(--tl);font-weight:700;color:#fff;margin-top:1px;
 }
@@ -193,7 +191,7 @@ code{
 .chk{
   display:flex;align-items:flex-start;gap:clamp(6px,.85vw,10px);
   padding:clamp(5px,.75vh,8px) clamp(8px,.95vw,11px);
-  background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.17);
+  background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.28);
   border-radius:7px;
 }
 .chk-ico{font-size:1.05em;flex-shrink:0;margin-top:1px}
@@ -201,32 +199,32 @@ code{
 .chk-t strong{color:var(--txt)}
 
 /* Section cover */
-.slide.sec{background:linear-gradient(135deg,var(--accent) 0%,#6366f1 100%)}
+.slide.sec{background:#0a0a0a}
 .slide.sec::before{
   background-image:
-    linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
   background-size:52px 52px;
 }
 .slide.sec::after{display:none}
-.slide.sec .lbl{color:rgba(255,255,255,.6)}
+.slide.sec .lbl{color:#00FF88}
 .slide.sec h1{color:#fff}
-.slide.sec p{color:rgba(255,255,255,.72)}
-.slide.sec .sn{color:rgba(255,255,255,.09)}
-.slide.sec .bc-item{color:rgba(255,255,255,.38)}
-.slide.sec .bc-item.on{color:#fff;background:rgba(255,255,255,.2)}
+.slide.sec p{color:rgba(255,255,255,.65)}
+.slide.sec .sn{color:rgba(255,255,255,.07)}
+.slide.sec .bc-item{color:rgba(255,255,255,.35)}
+.slide.sec .bc-item.on{color:#0a0a0a;background:var(--accent)}
 .sec-cover{display:flex;flex-direction:column;justify-content:center;height:100%;padding:var(--p);position:relative;z-index:1}
 .sec-num{
   position:absolute;right:var(--p);bottom:calc(var(--p)*.5);
   font-family:var(--font-d);font-size:clamp(4.5rem,12vw,10rem);
-  color:rgba(255,255,255,.09);line-height:1;letter-spacing:-.04em;
+  color:rgba(255,255,255,.07);line-height:1;letter-spacing:-.04em;
   pointer-events:none;user-select:none;
 }
 
 .cmp{width:100%;border-collapse:collapse;font-size:var(--ts)}
 .cmp thead th{
   text-align:left;padding:clamp(4px,.6vh,7px) clamp(5px,.6vw,9px);
-  color:var(--accent);font-weight:700;letter-spacing:.06em;
+  color:var(--green-t);font-weight:700;letter-spacing:.06em;
   text-transform:uppercase;font-size:calc(var(--ts)*.84);
   border-bottom:2px solid var(--border);
 }
@@ -251,9 +249,9 @@ hr{border:none;border-top:1px solid var(--border)}
 
 #prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0%;z-index:1000;transition:width .35s ease}
 #dots{position:fixed;right:clamp(5px,.9vw,12px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;z-index:1000}
-.nd{width:6px;height:6px;border-radius:50%;background:rgba(74,108,247,.22);cursor:pointer;border:none;padding:0;transition:all .3s ease}
+.nd{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.18);cursor:pointer;border:none;padding:0;transition:all .3s ease}
 .nd.on{background:var(--accent);transform:scale(1.45)}
-.nd:hover{background:rgba(74,108,247,.5)}
+.nd:hover{background:rgba(0,0,0,.4)}
 
 @media(max-height:700px){:root{--p:clamp(.65rem,1.9vw,1.6rem);--g:clamp(.3rem,.85vw,.7rem)}}
 @media(max-height:600px){#dots,.sn{display:none}}
@@ -282,7 +280,7 @@ hr{border:none;border-top:1px solid var(--border)}
       <div class="lbl rev">사내 실습 워크숍 · 2시간 속성</div>
       <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0">
         매일 하는 귀찮은<br>크롤링 업무,<br>
-        <span style="color:var(--accent)">AI로 없애는<br>가장 쉬운 방법</span>
+        <span style="color:var(--green-t)">AI로 없애는<br>가장 쉬운 방법</span>
       </h1>
       <p class="rev" style="max-width:480px;margin-bottom:var(--g)">
         Claude Code(두뇌) + Playwright(손가락)으로<br>
@@ -323,19 +321,19 @@ hr{border:none;border-top:1px solid var(--border)}
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Claude 데스크탑 설치</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
-            <div class="card" style="flex:1;min-width:140px;border-color:rgba(5,150,105,.25);background:rgba(5,150,105,.04)">
-              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green);margin-bottom:3px">STEP 02</div>
+            <div class="card" style="flex:1;min-width:140px;border-color:rgba(0,230,118,.35);background:rgba(0,230,118,.06)">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green-t);margin-bottom:3px">STEP 02</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">작업 폴더 + Google Sheets 생성</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
-            <div class="card" style="flex:1;min-width:140px;border-color:rgba(124,58,237,.25);background:rgba(124,58,237,.04)">
-              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--purple);margin-bottom:3px">STEP 03</div>
+            <div class="card" style="flex:1;min-width:140px;border-color:rgba(0,0,0,.18);background:rgba(0,0,0,.04)">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--txt2);margin-bottom:3px">STEP 03</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Claude에게 첫 요청<br><span style="font-weight:400;color:var(--txt2)">(Playwright 자동 설치)</span></div>
             </div>
           </div>
           <div style="display:flex;gap:var(--g);align-items:stretch;flex-wrap:wrap">
             <div class="card w" style="flex:1;min-width:140px">
-              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--warn);margin-bottom:3px">STEP 04</div>
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--txt2);margin-bottom:3px">STEP 04</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">서비스 계정 연결</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
@@ -345,19 +343,19 @@ hr{border:none;border-top:1px solid var(--border)}
             </div>
             <span class="parr" style="align-self:center">→</span>
             <div class="card p" style="flex:1;min-width:140px">
-              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--purple);margin-bottom:3px">실습 ②</div>
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--txt2);margin-bottom:3px">실습 ②</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">앱 버전 감지</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
             <div class="card g" style="flex:1;min-width:140px">
-              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green);margin-bottom:3px">마무리</div>
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green-t);margin-bottom:3px">마무리</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Google Chat 알림</div>
             </div>
           </div>
         </div>
       </div>
       <div class="card rev" style="margin-top:var(--ge)">
-        <p style="font-size:var(--tb)">🎯 <strong style="color:var(--txt)">오늘 끝나면</strong> — 반복 크롤링이 매일 자동으로 수집되고 <span style="color:var(--green);font-weight:600">Google Chat으로 결과가 도착</span>합니다</p>
+        <p style="font-size:var(--tb)">🎯 <strong style="color:var(--txt)">오늘 끝나면</strong> — 반복 크롤링이 매일 자동으로 수집되고 <span style="color:var(--green-t);font-weight:600">Google Chat으로 결과가 도착</span>합니다</p>
       </div>
     </div>
   </div>
@@ -405,12 +403,12 @@ hr{border:none;border-top:1px solid var(--border)}
           <div class="step"><div class="step-n">2</div><div class="step-t"><strong>설치 실행</strong><span>안내에 따라 설치 완료</span></div></div>
           <div class="step"><div class="step-n">3</div><div class="step-t"><strong>앱 실행 → 로그인</strong><span>Claude 계정으로 로그인</span></div></div>
           <div class="step"><div class="step-n">4</div><div class="step-t"><strong>Claude Code 화면 진입</strong><span>명령을 입력할 수 있는 터미널 화면 확인</span></div></div>
-          <div class="card" style="border-color:rgba(5,150,105,.25);background:rgba(5,150,105,.05);margin-top:var(--ge)">
+          <div class="card" style="border-color:rgba(0,230,118,.35);background:rgba(0,230,118,.07);margin-top:var(--ge)">
             <p style="font-size:var(--ts)">✅ <strong style="color:var(--txt)">체크포인트</strong> — 앱 실행 · 로그인 완료 · Claude Code 화면 진입</p>
           </div>
         </div>
         <div class="card w">
-          <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:var(--ge)">⚠️ 사전 준비</div>
+          <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:var(--ge)">⚠️ 사전 준비</div>
           <p style="font-size:var(--ts)">
             설치 파일은 강의 전 미리<br>다운로드해 오세요.<br><br>
             당일에는 <strong style="color:var(--txt)">"로그인 후 실행"</strong>부터 바로 시작합니다.<br><br>
@@ -463,7 +461,7 @@ hr{border:none;border-top:1px solid var(--border)}
           <div class="step"><div class="step-n">1</div><div class="step-t"><strong>최상위 프로젝트 폴더 생성</strong><span>예: <code>C:\Users\이름\competitor-monitor</code><br>이 폴더만 직접 만들면 됩니다</span></div></div>
           <div class="step"><div class="step-n">2</div><div class="step-t"><strong>Claude Code에서 폴더 열기</strong><span>Claude Code → 폴더 선택 → 작업 폴더 지정</span></div></div>
           <div class="card g" style="margin-top:var(--ge)">
-            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:4px">✅ 내부 구조는 Claude가 알아서</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:4px">✅ 내부 구조는 Claude가 알아서</div>
             <p style="font-size:var(--ts)">
               <code>src/</code>, <code>.env</code>, <code>requirements.txt</code> 등<br>
               폴더 내부 파일과 구조는<br>
@@ -473,7 +471,7 @@ hr{border:none;border-top:1px solid var(--border)}
           </div>
         </div>
         <div class="card b">
-          <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)">📁 최종 폴더 구조 예시</div>
+          <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">📁 최종 폴더 구조 예시</div>
           <div class="term" style="font-size:calc(var(--ts)*.88)">
             <div class="nw">competitor-monitor/</div>
             <div class="d">├── <span class="up">src/</span>          ← Claude가 생성</div>
@@ -521,7 +519,7 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)">🔗 스프레드시트 링크 복사해두기</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">🔗 스프레드시트 링크 복사해두기</div>
             <div class="term" style="font-size:calc(var(--ts)*.86)">
               <div class="d">docs.google.com/spreadsheets</div>
               <div class="d">/d/<span class="nw">여기가 Sheet ID</span>/edit</div>
@@ -529,7 +527,7 @@ hr{border:none;border-top:1px solid var(--border)}
             <p style="font-size:var(--ts);margin-top:var(--ge)">이 URL 전체를 복사해두세요.<br>Claude에게 요청할 때 바로 붙여넣습니다.</p>
           </div>
           <div class="card w">
-            <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:4px">💡 왜 탭 이름이 중요한가?</div>
+            <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:4px">💡 왜 탭 이름이 중요한가?</div>
             <p style="font-size:var(--ts)">Claude가 코드를 작성할 때 탭 이름을 기준으로 데이터를 저장합니다. 미리 만들어둬야 오류 없이 기록됩니다.</p>
           </div>
         </div>
@@ -644,11 +642,11 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card g">
-            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:4px">✅ 내가 할 일</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:4px">✅ 내가 할 일</div>
             <p style="font-size:var(--ts)">4가지 context를 담아서 요청하기<br><br>설치·환경구성·코드 작성·테스트는 <strong style="color:var(--txt)">Claude가 전부 처리</strong></p>
           </div>
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">왜 Playwright를 선택했는가?</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:4px">왜 Playwright를 선택했는가?</div>
             <p style="font-size:var(--ts)">Claude가 URL을 보고 해당 사이트가 JavaScript로 렌더링된다는 것을 판단 → 일반 크롤러로는 빈값이 나오므로 Playwright를 자동 선택</p>
           </div>
         </div>
@@ -675,7 +673,7 @@ hr{border:none;border-top:1px solid var(--border)}
       <h2 class="rev">왜 일반 방법으론 안 되고 Playwright인가</h2>
       <div class="g2b rev" style="margin-top:var(--ge)">
         <div class="card r">
-          <div style="font-size:var(--ts);color:var(--red);font-weight:700;margin-bottom:var(--ge)">❌ 일반 크롤러 (requests)</div>
+          <div style="font-size:var(--ts);color:var(--err);font-weight:700;margin-bottom:var(--ge)">❌ 일반 크롤러 (requests)</div>
           <p style="font-size:var(--ts);margin-bottom:var(--ge)">서버에서 받은 HTML 파일만 읽어옴.<br>JavaScript는 실행하지 않음.</p>
           <div class="term">
             <div class="cm"># 삼삼엠투는 React 앱 → JS가 숫자를 그림</div>
@@ -683,7 +681,7 @@ hr{border:none;border-top:1px solid var(--border)}
           </div>
         </div>
         <div class="card g">
-          <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:var(--ge)">✅ Playwright</div>
+          <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">✅ Playwright</div>
           <p style="font-size:var(--ts);margin-bottom:var(--ge)">실제 Chrome 브라우저를 뒤에서 실행.<br>JS 렌더링이 완료된 후 데이터를 읽음.</p>
           <div class="term">
             <div class="cm"># JS 실행 완료 후 → 실제 숫자</div>
@@ -755,15 +753,15 @@ hr{border:none;border-top:1px solid var(--border)}
       <div class="g2b rev" style="margin-top:var(--ge)">
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:6px">🤖 서비스 계정 = 프로그램 전용 구글 계정</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">🤖 서비스 계정 = 프로그램 전용 구글 계정</div>
             <p style="font-size:var(--ts)">사람이 로그인하지 않아도<br>코드가 Google Sheets에 자동으로<br>데이터를 쓸 수 있게 해주는 열쇠</p>
           </div>
           <div class="card g">
-            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">✅ 이게 있으면</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">✅ 이게 있으면</div>
             <p style="font-size:var(--ts)">매일 새벽에 자동으로 실행되는 코드가<br>내 시트에 데이터를 쌓을 수 있음<br>(내가 컴퓨터 앞에 없어도)</p>
           </div>
           <div class="card r">
-            <div style="font-size:var(--ts);color:var(--red);font-weight:700;margin-bottom:6px">❌ 이게 없으면</div>
+            <div style="font-size:var(--ts);color:var(--err);font-weight:700;margin-bottom:6px">❌ 이게 없으면</div>
             <p style="font-size:var(--ts)">코드가 "권한 없음" 오류 발생<br>Sheets에 아무것도 기록 불가</p>
           </div>
         </div>
@@ -777,7 +775,7 @@ hr{border:none;border-top:1px solid var(--border)}
             <div class="up">raw_supply_snapshots 탭에 기록</div>
           </div>
           <div class="card w">
-            <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:4px">⚠️ JSON 파일 = 열쇠</div>
+            <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:4px">⚠️ JSON 파일 = 열쇠</div>
             <p style="font-size:var(--ts)">비밀번호와 동일합니다.<br>GitHub에 올리거나 공유하지 마세요.<br>작업 폴더 안에만 보관.</p>
           </div>
         </div>
@@ -812,8 +810,8 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card g">
-            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">✅ 파일 넣은 후 Claude에게</div>
-            <div style="background:rgba(74,108,247,.07);border:1px solid rgba(74,108,247,.18);border-radius:8px;padding:clamp(7px,.9vw,11px);font-size:var(--ts);color:var(--txt2);margin-top:4px">
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">✅ 파일 넣은 후 Claude에게</div>
+            <div style="background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.28);border-radius:8px;padding:clamp(7px,.9vw,11px);font-size:var(--ts);color:var(--txt2);margin-top:4px">
               service-account.json 파일을<br>
               작업 폴더에 넣었어.<br>
               이걸 사용해서 Google Sheets에<br>
@@ -821,7 +819,7 @@ hr{border:none;border-top:1px solid var(--border)}
             </div>
           </div>
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">📧 서비스 계정 이메일 형태</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:4px">📧 서비스 계정 이메일 형태</div>
             <div class="term" style="font-size:calc(var(--ts)*.85)">
               <div class="up">이름@프로젝트ID</div>
               <div class="up">.iam.gserviceaccount.com</div>
@@ -856,13 +854,13 @@ hr{border:none;border-top:1px solid var(--border)}
           <div class="step"><div class="step-n">2</div><div class="step-t"><strong>우측 상단 공유 버튼 클릭</strong><span></span></div></div>
           <div class="step"><div class="step-n">3</div><div class="step-t"><strong>서비스 계정 이메일 입력</strong><span><code>이름@프로젝트.iam.gserviceaccount.com</code></span></div></div>
           <div class="step"><div class="step-n">4</div><div class="step-t"><strong>권한: 편집자 선택 → 완료</strong><span></span></div></div>
-          <div class="card" style="border-color:rgba(5,150,105,.25);background:rgba(5,150,105,.05);margin-top:var(--ge)">
+          <div class="card" style="border-color:rgba(0,230,118,.35);background:rgba(0,230,118,.07);margin-top:var(--ge)">
             <p style="font-size:var(--ts)">✅ <strong style="color:var(--txt)">체크포인트</strong> — JSON 파일 폴더에 있음 · 시트 공유 완료</p>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:6px">🔐 왜 이 작업이 필요한가?</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">🔐 왜 이 작업이 필요한가?</div>
             <p style="font-size:var(--ts)">
               Google Sheets는 기본적으로<br>아무나 수정할 수 없습니다.<br><br>
               서비스 계정 이메일을 공유하면<br>
@@ -987,7 +985,7 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card g">
-            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">📊 시트에 쌓이는 데이터</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">📊 시트에 쌓이는 데이터</div>
             <table class="cmp" style="font-size:calc(var(--ts)*.88)">
               <thead><tr><th>date</th><th>region</th><th>count</th></tr></thead>
               <tbody>
@@ -998,7 +996,7 @@ hr{border:none;border-top:1px solid var(--border)}
             </table>
           </div>
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">📈 오류가 나면</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:4px">📈 오류가 나면</div>
             <p style="font-size:var(--ts)">오류 메시지 전체를 복사해서<br>Claude에게 붙여넣기 →<br>"이 오류 고쳐줘" 한 마디</p>
           </div>
         </div>
@@ -1045,7 +1043,7 @@ hr{border:none;border-top:1px solid var(--border)}
       <h2 class="rev">iOS / Android — Claude에게 전달할 정보</h2>
       <div class="g2b rev" style="margin-top:var(--ge)">
         <div>
-          <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)"> iOS App Store</div>
+          <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)"> iOS App Store</div>
           <div style="display:flex;flex-direction:column;gap:var(--ge)">
             <div class="ctx-card">
               <div class="ctx-num">1</div>
@@ -1066,7 +1064,7 @@ hr{border:none;border-top:1px solid var(--border)}
           </div>
         </div>
         <div>
-          <div style="font-size:var(--ts);color:var(--purple);font-weight:700;margin-bottom:var(--ge)">🤖 Android Google Play</div>
+          <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:var(--ge)">🤖 Android Google Play</div>
           <div style="display:flex;flex-direction:column;gap:var(--ge)">
             <div class="ctx-card">
               <div class="ctx-num">1</div>
@@ -1132,11 +1130,11 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card g">
-            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">앱 설명 변경도 감지</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">앱 설명 변경도 감지</div>
             <p style="font-size:var(--ts)">"어제와 오늘 앱 설명 텍스트가 달라지면 is_description_changed=TRUE로 표시해줘" 라고 요청하면 됩니다</p>
           </div>
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">✅ 체크포인트</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:4px">✅ 체크포인트</div>
             <div style="display:flex;flex-direction:column;gap:5px">
               <div class="chk"><span class="chk-ico">✅</span><div class="chk-t">실습 ① 시트에 방 개수 기록됨</div></div>
               <div class="chk"><span class="chk-ico">✅</span><div class="chk-t">실습 ② 시트에 앱 버전 기록됨</div></div>
@@ -1198,8 +1196,8 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)">Claude에게 이렇게 요청</div>
-            <div style="background:rgba(74,108,247,.07);border:1px solid rgba(74,108,247,.18);border-radius:8px;padding:clamp(7px,.9vw,11px);font-size:var(--ts);color:var(--txt2)">
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">Claude에게 이렇게 요청</div>
+            <div style="background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.28);border-radius:8px;padding:clamp(7px,.9vw,11px);font-size:var(--ts);color:var(--txt2)">
               .env의 GOOGLE_CHAT_WEBHOOK_URL로<br>
               수집 결과 요약을 한국어로 정리해서<br>
               Google Chat에 전송하는 함수를 만들어줘.<br><br>
@@ -1208,7 +1206,7 @@ hr{border:none;border-top:1px solid var(--border)}
             </div>
           </div>
           <div class="card w">
-            <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:4px">⚠️ 웹훅 URL 보안</div>
+            <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:4px">⚠️ 웹훅 URL 보안</div>
             <p style="font-size:var(--ts)">웹훅 URL은 비밀번호와 같습니다.<br><code>.env</code>에만 저장하고 코드에 직접 쓰지 마세요.</p>
           </div>
         </div>
@@ -1253,17 +1251,17 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
           <div class="card g">
-            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:var(--ge)">✅ 전체 자동화 완성 구조</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">✅ 전체 자동화 완성 구조</div>
             <div style="display:flex;flex-direction:column;gap:var(--ge)">
               <div class="pbox b">① Playwright 크롤링</div>
               <div style="text-align:center;color:var(--txt3)">↓</div>
               <div class="pbox g">② Google Sheets 저장</div>
               <div style="text-align:center;color:var(--txt3)">↓</div>
-              <div class="pbox" style="border-color:rgba(74,108,247,.28);color:var(--accent);background:rgba(74,108,247,.06)">③ Google Chat 전송</div>
+              <div class="pbox b">③ Google Chat 전송</div>
             </div>
           </div>
           <div class="card b">
-            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">🔄 자동 실행 등록</div>
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:4px">🔄 자동 실행 등록</div>
             <p style="font-size:var(--ts)">Claude에게<br>"매일 오전 9시에 자동 실행되게<br>스케줄러 등록해줘"<br>라고 하면 완성</p>
           </div>
         </div>
@@ -1285,7 +1283,7 @@ hr{border:none;border-top:1px solid var(--border)}
     <span class="bc-item on">알림</span>
   </div>
   <div class="slide-inner" style="justify-content:center;align-items:center;text-align:center">
-    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(55vw,480px);height:min(55vw,480px);background:radial-gradient(circle,rgba(74,108,247,.08) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(55vw,480px);height:min(55vw,480px);background:radial-gradient(circle,rgba(0,230,118,.1) 0%,transparent 70%);pointer-events:none"></div>
     <div style="max-width:min(90vw,580px);position:relative">
       <div class="lbl rev">감사합니다</div>
       <h1 class="rev" style="margin:clamp(.25rem,1vh,.7rem) 0">Q &amp; A</h1>
