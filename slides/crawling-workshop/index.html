@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>귀찮은 크롤링 업무 AI로 없애기 — Claude Code + Playwright</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #f5f7ff;
+  --surface: #ffffff;
+  --border:  #e0e6f0;
+  --shadow:  0 1px 4px rgba(74,108,247,.08),0 0 0 1px rgba(74,108,247,.06);
+  --accent:  #4A6CF7;
+  --accent2: #3a5ce8;
+  --green:   #059669;
+  --purple:  #7c3aed;
+  --warn:    #d97706;
+  --red:     #dc2626;
+  --txt:     #111827;
+  --txt2:    #4b5563;
+  --txt3:    #9ca3af;
+  --font-d:  'Archivo Black', sans-serif;
+  --font-b:  'Space Grotesk', sans-serif;
+  --ease:    cubic-bezier(0.16,1,0.3,1);
+  --t1: clamp(1.7rem,4.8vw,3.8rem);
+  --t2: clamp(1.2rem,2.6vw,2.1rem);
+  --t3: clamp(.9rem,1.7vw,1.35rem);
+  --tb: clamp(.73rem,1.1vw,.93rem);
+  --ts: clamp(.61rem,.9vw,.80rem);
+  --tl: clamp(.54rem,.78vw,.67rem);
+  --tn: clamp(2rem,6vw,5rem);
+  --p:  clamp(1rem,2.8vw,2.6rem);
+  --g:  clamp(.5rem,1.2vw,1.1rem);
+  --ge: clamp(.28rem,.65vw,.55rem);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow-x:hidden}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--bg);color:var(--txt);overflow-x:hidden}
+
+.slide{
+  width:100vw;height:100vh;height:100dvh;
+  overflow:hidden;scroll-snap-align:start;
+  display:flex;flex-direction:column;position:relative;
+  background:var(--bg);
+}
+.slide::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(74,108,247,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(74,108,247,.025) 1px,transparent 1px);
+  background-size:52px 52px;
+}
+.slide::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),#818CF8);
+  opacity:.2;pointer-events:none;
+}
+
+.slide-inner{
+  flex:1;display:flex;flex-direction:column;
+  padding:var(--p);position:relative;z-index:1;overflow:hidden;
+}
+.sn{
+  position:absolute;top:calc(var(--p)*.35);left:var(--p);
+  font-family:var(--font-d);font-size:var(--tn);
+  color:rgba(74,108,247,.07);line-height:1;
+  letter-spacing:-.04em;pointer-events:none;user-select:none;
+}
+.bc{
+  position:absolute;top:var(--p);right:var(--p);
+  display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:flex-end;
+}
+.bc-item{
+  font-size:var(--tl);font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--txt3);
+  padding:2px 7px;border-radius:3px;transition:color .3s,background .3s;
+}
+.bc-item.on{color:#fff;background:var(--accent)}
+
+.content{
+  flex:1;display:flex;flex-direction:column;
+  justify-content:center;gap:var(--g);
+  padding-top:clamp(1.5rem,4.5vh,3.5rem);overflow:hidden;
+}
+.lbl{font-size:var(--tl);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--font-d);font-size:var(--t1);line-height:1.1;letter-spacing:-.02em;color:var(--txt)}
+h2{font-family:var(--font-d);font-size:var(--t2);line-height:1.15;letter-spacing:-.02em;color:var(--txt)}
+h3{font-family:var(--font-b);font-size:var(--t3);font-weight:700;line-height:1.3;color:var(--txt)}
+p{font-size:var(--tb);line-height:1.65;color:var(--txt2)}
+code{
+  font-family:'JetBrains Mono','Courier New',monospace;
+  background:rgba(74,108,247,.09);color:var(--accent2);
+  padding:1px 5px;border-radius:3px;font-size:.87em;
+}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:clamp(.55rem,1.1vw,1rem);
+  box-shadow:var(--shadow);
+}
+.card.b{border-color:rgba(74,108,247,.28);background:rgba(74,108,247,.04)}
+.card.g{border-color:rgba(5,150,105,.24);background:rgba(5,150,105,.04)}
+.card.p{border-color:rgba(124,58,237,.24);background:rgba(124,58,237,.04)}
+.card.w{border-color:rgba(217,119,6,.24);background:rgba(217,119,6,.04)}
+.card.r{border-color:rgba(220,38,38,.24);background:rgba(220,38,38,.04)}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:var(--ge)}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--ge)}
+.gs{display:grid;grid-template-columns:1.25fr .75fr;gap:var(--g)}
+.g2b{display:grid;grid-template-columns:1fr 1fr;gap:var(--g)}
+
+.badge{
+  display:inline-flex;align-items:center;
+  font-size:var(--tl);font-weight:700;
+  padding:2px 7px;border-radius:4px;letter-spacing:.04em;
+}
+.bk{background:rgba(74,108,247,.12);color:var(--accent2)}
+.bg{background:rgba(5,150,105,.12);color:#047857}
+.bp{background:rgba(124,58,237,.12);color:#6d28d9}
+.bw{background:rgba(217,119,6,.12);color:#b45309}
+.bo{background:rgba(0,0,0,.06);color:var(--txt3)}
+.br{background:rgba(220,38,38,.1);color:#b91c1c}
+
+.pipe{display:flex;align-items:center;gap:var(--ge);flex-wrap:wrap}
+.pbox{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:7px;padding:clamp(4px,.7vh,8px) clamp(6px,.7vw,11px);
+  font-size:var(--ts);font-weight:600;text-align:center;flex:1;min-width:55px;
+  box-shadow:var(--shadow);
+}
+.pbox.b{border-color:rgba(74,108,247,.28);color:var(--accent);background:rgba(74,108,247,.06)}
+.pbox.g{border-color:rgba(5,150,105,.28);color:#047857;background:rgba(5,150,105,.06)}
+.pbox.p{border-color:rgba(124,58,237,.28);color:#6d28d9;background:rgba(124,58,237,.06)}
+.parr{color:var(--txt3);font-size:1.1em;flex-shrink:0}
+
+.term{
+  background:#1e293b;border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;padding:clamp(7px,1.1vw,13px) clamp(9px,1.4vw,15px);
+  font-family:'JetBrains Mono','Courier New',monospace;
+  font-size:var(--ts);line-height:1.72;overflow:hidden;
+}
+.term .b {color:#f1f5f9;font-weight:700}
+.term .d {color:rgba(241,245,249,.42)}
+.term .up{color:#34D399}
+.term .dn{color:#f87171}
+.term .nw{color:#fbbf24}
+.term .bl{color:#818CF8}
+.term .cm{color:rgba(241,245,249,.26);font-style:italic}
+
+/* 프롬프트 컨텍스트 카드 */
+.ctx-card{
+  display:flex;gap:clamp(8px,1vw,12px);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:9px;padding:clamp(7px,1vh,11px) clamp(9px,1.1vw,14px);
+  box-shadow:var(--shadow);align-items:flex-start;
+}
+.ctx-num{
+  width:clamp(20px,1.9vw,25px);height:clamp(20px,1.9vw,25px);
+  border-radius:6px;background:var(--accent);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:var(--tl);font-weight:700;color:#fff;margin-top:1px;
+}
+.ctx-num.g{background:var(--green)}
+.ctx-num.p{background:var(--purple)}
+.ctx-num.w{background:var(--warn)}
+.ctx-body{font-size:var(--ts);line-height:1.55}
+.ctx-body strong{color:var(--txt);display:block;margin-bottom:2px;font-size:var(--tb)}
+.ctx-body span{color:var(--txt2)}
+
+.stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:clamp(7px,1.1vh,12px);text-align:center;
+  box-shadow:var(--shadow);
+}
+.stat-n{font-family:var(--font-d);font-size:clamp(1.4rem,2.8vw,2.4rem);line-height:1}
+.stat-l{font-size:var(--ts);color:var(--txt2);margin-top:4px}
+
+.step{display:flex;gap:clamp(7px,1vw,12px);align-items:flex-start}
+.step-n{
+  width:clamp(19px,1.8vw,24px);height:clamp(19px,1.8vw,24px);
+  border-radius:50%;background:var(--accent);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:var(--tl);font-weight:700;color:#fff;margin-top:1px;
+}
+.step-t{font-size:var(--tb);line-height:1.5}
+.step-t strong{color:var(--txt);display:block;margin-bottom:1px}
+.step-t span{color:var(--txt2);font-size:var(--ts)}
+
+.chk{
+  display:flex;align-items:flex-start;gap:clamp(6px,.85vw,10px);
+  padding:clamp(5px,.75vh,8px) clamp(8px,.95vw,11px);
+  background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.17);
+  border-radius:7px;
+}
+.chk-ico{font-size:1.05em;flex-shrink:0;margin-top:1px}
+.chk-t{font-size:var(--tb);color:var(--txt2);line-height:1.5}
+.chk-t strong{color:var(--txt)}
+
+/* Section cover */
+.slide.sec{background:linear-gradient(135deg,var(--accent) 0%,#6366f1 100%)}
+.slide.sec::before{
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:52px 52px;
+}
+.slide.sec::after{display:none}
+.slide.sec .lbl{color:rgba(255,255,255,.6)}
+.slide.sec h1{color:#fff}
+.slide.sec p{color:rgba(255,255,255,.72)}
+.slide.sec .sn{color:rgba(255,255,255,.09)}
+.slide.sec .bc-item{color:rgba(255,255,255,.38)}
+.slide.sec .bc-item.on{color:#fff;background:rgba(255,255,255,.2)}
+.sec-cover{display:flex;flex-direction:column;justify-content:center;height:100%;padding:var(--p);position:relative;z-index:1}
+.sec-num{
+  position:absolute;right:var(--p);bottom:calc(var(--p)*.5);
+  font-family:var(--font-d);font-size:clamp(4.5rem,12vw,10rem);
+  color:rgba(255,255,255,.09);line-height:1;letter-spacing:-.04em;
+  pointer-events:none;user-select:none;
+}
+
+.cmp{width:100%;border-collapse:collapse;font-size:var(--ts)}
+.cmp thead th{
+  text-align:left;padding:clamp(4px,.6vh,7px) clamp(5px,.6vw,9px);
+  color:var(--accent);font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;font-size:calc(var(--ts)*.84);
+  border-bottom:2px solid var(--border);
+}
+.cmp tbody td{
+  padding:clamp(4px,.6vh,7px) clamp(5px,.6vw,9px);
+  border-bottom:1px solid var(--border);color:var(--txt2);vertical-align:top;
+}
+.cmp tbody tr:last-child td{border-bottom:none}
+.cmp tbody td:first-child{color:var(--txt);font-weight:600}
+
+hr{border:none;border-top:1px solid var(--border)}
+
+.rev{opacity:0;transform:translateY(20px);transition:opacity .55s var(--ease),transform .55s var(--ease)}
+.slide.vis .rev             {opacity:1;transform:translateY(0)}
+.slide.vis .rev:nth-child(1){transition-delay:.05s}
+.slide.vis .rev:nth-child(2){transition-delay:.12s}
+.slide.vis .rev:nth-child(3){transition-delay:.19s}
+.slide.vis .rev:nth-child(4){transition-delay:.26s}
+.slide.vis .rev:nth-child(5){transition-delay:.33s}
+.slide.vis .rev:nth-child(6){transition-delay:.40s}
+.slide.vis .rev:nth-child(7){transition-delay:.47s}
+
+#prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);width:0%;z-index:1000;transition:width .35s ease}
+#dots{position:fixed;right:clamp(5px,.9vw,12px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;z-index:1000}
+.nd{width:6px;height:6px;border-radius:50%;background:rgba(74,108,247,.22);cursor:pointer;border:none;padding:0;transition:all .3s ease}
+.nd.on{background:var(--accent);transform:scale(1.45)}
+.nd:hover{background:rgba(74,108,247,.5)}
+
+@media(max-height:700px){:root{--p:clamp(.65rem,1.9vw,1.6rem);--g:clamp(.3rem,.85vw,.7rem)}}
+@media(max-height:600px){#dots,.sn{display:none}}
+@media(max-width:640px){.g2,.g3,.gs,.g2b{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.2s!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<nav id="dots"></nav>
+
+<!-- ══ 01 COVER ══ -->
+<section class="slide" id="s01">
+  <div class="sn">01</div>
+  <div class="bc">
+    <span class="bc-item on">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner" style="justify-content:center">
+    <div style="max-width:min(90vw,740px)">
+      <div class="lbl rev">사내 실습 워크숍 · 2시간 속성</div>
+      <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0">
+        매일 하는 귀찮은<br>크롤링 업무,<br>
+        <span style="color:var(--accent)">AI로 없애는<br>가장 쉬운 방법</span>
+      </h1>
+      <p class="rev" style="max-width:480px;margin-bottom:var(--g)">
+        Claude Code(두뇌) + Playwright(손가락)으로<br>
+        방 개수 수집 · 앱 버전 감지 · Google Chat 알림까지
+      </p>
+      <div class="rev" style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge bk">Claude Code</span>
+        <span class="badge bk">Playwright</span>
+        <span class="badge bk">Google Sheets</span>
+        <span class="badge bg">코딩 지식 불필요</span>
+      </div>
+    </div>
+    <div style="position:absolute;right:var(--p);bottom:var(--p);width:clamp(130px,22vw,280px);height:clamp(130px,22vw,280px);background:var(--accent);border-radius:50%;opacity:.07;filter:blur(55px);pointer-events:none"></div>
+  </div>
+</section>
+
+<!-- ══ 02 오늘의 흐름 ══ -->
+<section class="slide" id="s02">
+  <div class="sn">02</div>
+  <div class="bc">
+    <span class="bc-item on">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">오늘의 흐름</div>
+      <h2 class="rev">이 순서대로 진행합니다</h2>
+      <div class="rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div style="display:flex;gap:var(--g);align-items:stretch;flex-wrap:wrap">
+            <div class="card b" style="flex:1;min-width:140px">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);margin-bottom:3px">STEP 01</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Claude 데스크탑 설치</div>
+            </div>
+            <span class="parr" style="align-self:center">→</span>
+            <div class="card" style="flex:1;min-width:140px;border-color:rgba(5,150,105,.25);background:rgba(5,150,105,.04)">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green);margin-bottom:3px">STEP 02</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">작업 폴더 + Google Sheets 생성</div>
+            </div>
+            <span class="parr" style="align-self:center">→</span>
+            <div class="card" style="flex:1;min-width:140px;border-color:rgba(124,58,237,.25);background:rgba(124,58,237,.04)">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--purple);margin-bottom:3px">STEP 03</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Claude에게 첫 요청<br><span style="font-weight:400;color:var(--txt2)">(Playwright 자동 설치)</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:var(--g);align-items:stretch;flex-wrap:wrap">
+            <div class="card w" style="flex:1;min-width:140px">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--warn);margin-bottom:3px">STEP 04</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">서비스 계정 연결</div>
+            </div>
+            <span class="parr" style="align-self:center">→</span>
+            <div class="card b" style="flex:1;min-width:140px">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);margin-bottom:3px">실습 ①</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">삼삼엠투 방 개수</div>
+            </div>
+            <span class="parr" style="align-self:center">→</span>
+            <div class="card p" style="flex:1;min-width:140px">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--purple);margin-bottom:3px">실습 ②</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">앱 버전 감지</div>
+            </div>
+            <span class="parr" style="align-self:center">→</span>
+            <div class="card g" style="flex:1;min-width:140px">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green);margin-bottom:3px">마무리</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Google Chat 알림</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card rev" style="margin-top:var(--ge)">
+        <p style="font-size:var(--tb)">🎯 <strong style="color:var(--txt)">오늘 끝나면</strong> — 반복 크롤링이 매일 자동으로 수집되고 <span style="color:var(--green);font-weight:600">Google Chat으로 결과가 도착</span>합니다</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 03 SECTION 01 헤더 — Claude 설치 ══ -->
+<section class="slide sec" id="s03">
+  <div class="sn">03</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item on">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">STEP 01</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:500px">Claude<br>데스크탑 앱 설치</h1>
+    <p class="rev" style="max-width:420px">Windows에 설치하고 로그인합니다.<br>이게 오늘 모든 작업의 시작입니다.</p>
+    <div class="sec-num">01</div>
+  </div>
+</section>
+
+<!-- ══ 04 Claude 설치 방법 ══ -->
+<section class="slide" id="s04">
+  <div class="sn">04</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item on">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 01 · 설치</div>
+      <h2 class="rev">Claude 데스크탑 앱 설치 & 실행</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="step"><div class="step-n">1</div><div class="step-t"><strong>공식 사이트 접속</strong><span><code>claude.ai/download</code> → Windows(.exe) 다운로드</span></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-t"><strong>설치 실행</strong><span>안내에 따라 설치 완료</span></div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-t"><strong>앱 실행 → 로그인</strong><span>Claude 계정으로 로그인</span></div></div>
+          <div class="step"><div class="step-n">4</div><div class="step-t"><strong>Claude Code 화면 진입</strong><span>명령을 입력할 수 있는 터미널 화면 확인</span></div></div>
+          <div class="card" style="border-color:rgba(5,150,105,.25);background:rgba(5,150,105,.05);margin-top:var(--ge)">
+            <p style="font-size:var(--ts)">✅ <strong style="color:var(--txt)">체크포인트</strong> — 앱 실행 · 로그인 완료 · Claude Code 화면 진입</p>
+          </div>
+        </div>
+        <div class="card w">
+          <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:var(--ge)">⚠️ 사전 준비</div>
+          <p style="font-size:var(--ts)">
+            설치 파일은 강의 전 미리<br>다운로드해 오세요.<br><br>
+            당일에는 <strong style="color:var(--txt)">"로그인 후 실행"</strong>부터 바로 시작합니다.<br><br>
+            📸 실제 실행 화면<br>(스크린샷 — 당일 교체)
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 SECTION 02 헤더 — 폴더 + 시트 준비 ══ -->
+<section class="slide sec" id="s05">
+  <div class="sn">05</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item on">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">STEP 02</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:560px">작업 폴더 +<br>Google Sheets 준비</h1>
+    <p class="rev" style="max-width:460px">Claude가 작업할 공간과<br>수집 데이터를 쌓을 시트를 먼저 만듭니다</p>
+    <div class="sec-num">02</div>
+  </div>
+</section>
+
+<!-- ══ 06 폴더 생성 ══ -->
+<section class="slide" id="s06">
+  <div class="sn">06</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item on">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 02 · 작업 폴더</div>
+      <h2 class="rev">작업 폴더 생성</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="step"><div class="step-n">1</div><div class="step-t"><strong>최상위 프로젝트 폴더 생성</strong><span>예: <code>C:\Users\이름\competitor-monitor</code><br>이 폴더만 직접 만들면 됩니다</span></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-t"><strong>Claude Code에서 폴더 열기</strong><span>Claude Code → 폴더 선택 → 작업 폴더 지정</span></div></div>
+          <div class="card g" style="margin-top:var(--ge)">
+            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:4px">✅ 내부 구조는 Claude가 알아서</div>
+            <p style="font-size:var(--ts)">
+              <code>src/</code>, <code>.env</code>, <code>requirements.txt</code> 등<br>
+              폴더 내부 파일과 구조는<br>
+              Claude Code가 자동으로 생성합니다.<br>
+              직접 만들 필요 없습니다.
+            </p>
+          </div>
+        </div>
+        <div class="card b">
+          <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)">📁 최종 폴더 구조 예시</div>
+          <div class="term" style="font-size:calc(var(--ts)*.88)">
+            <div class="nw">competitor-monitor/</div>
+            <div class="d">├── <span class="up">src/</span>          ← Claude가 생성</div>
+            <div class="d">│   └── collect.py</div>
+            <div class="d">├── <span class="up">.env</span>          ← Claude가 생성</div>
+            <div class="d">├── <span class="up">service-account.json</span></div>
+            <div class="cm">│              ← 내가 직접 넣음</div>
+            <div class="d">└── <span class="up">requirements.txt</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 Google Sheets 생성 ══ -->
+<section class="slide" id="s07">
+  <div class="sn">07</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item on">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 02 · Google Sheets</div>
+      <h2 class="rev">수집 데이터를 쌓을 시트 만들기</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="step"><div class="step-n">1</div><div class="step-t"><strong>새 스프레드시트 생성</strong><span><code>sheets.new</code> 접속 → 새 시트 생성</span></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-t"><strong>탭 이름 설정</strong><span>하단 + 버튼으로 탭 추가 → 아래 이름으로 설정</span></div></div>
+          <div style="margin-top:var(--ge)">
+            <table class="cmp">
+              <thead><tr><th>탭 이름</th><th>저장 데이터</th></tr></thead>
+              <tbody>
+                <tr><td><code>raw_supply_snapshots</code></td><td>방 개수 (실습 ①)</td></tr>
+                <tr><td><code>app_versions</code></td><td>앱 버전 (실습 ②)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)">🔗 스프레드시트 링크 복사해두기</div>
+            <div class="term" style="font-size:calc(var(--ts)*.86)">
+              <div class="d">docs.google.com/spreadsheets</div>
+              <div class="d">/d/<span class="nw">여기가 Sheet ID</span>/edit</div>
+            </div>
+            <p style="font-size:var(--ts);margin-top:var(--ge)">이 URL 전체를 복사해두세요.<br>Claude에게 요청할 때 바로 붙여넣습니다.</p>
+          </div>
+          <div class="card w">
+            <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:4px">💡 왜 탭 이름이 중요한가?</div>
+            <p style="font-size:var(--ts)">Claude가 코드를 작성할 때 탭 이름을 기준으로 데이터를 저장합니다. 미리 만들어둬야 오류 없이 기록됩니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 08 SECTION 03 헤더 — Claude 첫 요청 ══ -->
+<section class="slide sec" id="s08">
+  <div class="sn">08</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">STEP 03</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:580px">Claude에게<br>첫 요청하기</h1>
+    <p class="rev" style="max-width:480px">자연어로 요청하면 Claude가 코드를 짭니다.<br>이 과정에서 Playwright가 자동으로 설치됩니다.</p>
+    <div class="sec-num">03</div>
+  </div>
+</section>
+
+<!-- ══ 09 자연어 요청법 — Context 4가지 ══ -->
+<section class="slide" id="s09">
+  <div class="sn">09</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 03 · 요청 방법</div>
+      <h2 class="rev">Claude에게 요청할 때 이 4가지를 담으세요</h2>
+      <p class="rev" style="color:var(--txt2)">프롬프트가 막막할 때, 이 4가지 항목을 채우면 Claude가 정확하게 코드를 만들어줍니다</p>
+      <div style="display:flex;flex-direction:column;gap:var(--ge);margin-top:var(--ge)">
+        <div class="ctx-card rev">
+          <div class="ctx-num">1</div>
+          <div class="ctx-body">
+            <strong>어떤 링크에서 가져올지</strong>
+            <span>크롤링할 URL을 정확히 알려줍니다<br>예: "이 링크에서 가져와줘 → <code>https://web.33m2.co.kr/guest/room</code>"</span>
+          </div>
+        </div>
+        <div class="ctx-card rev">
+          <div class="ctx-num g">2</div>
+          <div class="ctx-body">
+            <strong>그 정보가 페이지의 어디에 있는지</strong>
+            <span>숫자·텍스트가 화면 어느 부분에 보이는지 설명합니다<br>예: "방 목록 위쪽에 타입별로 카드가 있고, 각 카드 오른쪽에 개수 숫자가 있어"</span>
+          </div>
+        </div>
+        <div class="ctx-card rev">
+          <div class="ctx-num p">3</div>
+          <div class="ctx-body">
+            <strong>이 데이터가 매일 바뀌는 건지</strong>
+            <span>수집 주기와 누적 여부를 알려줍니다<br>예: "이 숫자는 매일 달라져. 날짜와 함께 시트에 한 행씩 추가해줘"</span>
+          </div>
+        </div>
+        <div class="ctx-card rev">
+          <div class="ctx-num w">4</div>
+          <div class="ctx-body">
+            <strong>결과를 어디에 저장할지 (시트 링크)</strong>
+            <span>아까 만든 Google Sheets URL과 탭 이름을 직접 붙여넣습니다<br>예: "이 시트에 저장해줘 → <code>[스프레드시트 URL]</code> · 탭 이름: raw_supply_snapshots"</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 10 Playwright 자동 설치 ══ -->
+<section class="slide" id="s10">
+  <div class="sn">10</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 03 · 자동 설치</div>
+      <h2 class="rev">요청하면 Playwright가 자동으로 설치됩니다</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div>
+          <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--ge)">Claude Code 터미널에서 일어나는 일</div>
+          <div class="term">
+            <div class="cm"># 1. Claude가 사이트를 분석</div>
+            <div class="d">→ JS 렌더링 필요한 사이트 감지</div>
+            <div class="b"> </div>
+            <div class="cm"># 2. 필요한 도구 자동 설치</div>
+            <div class="d">$ <span class="b">python -m venv .venv</span></div>
+            <div class="d">$ <span class="b">pip install playwright gspread</span></div>
+            <div class="d">$ <span class="b">playwright install chromium</span></div>
+            <div class="up">✓ 환경 설정 완료</div>
+            <div class="b"> </div>
+            <div class="cm"># 3. 크롤링 코드 생성 후 실행</div>
+            <div class="d">$ <span class="b">python collect.py</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:4px">✅ 내가 할 일</div>
+            <p style="font-size:var(--ts)">4가지 context를 담아서 요청하기<br><br>설치·환경구성·코드 작성·테스트는 <strong style="color:var(--txt)">Claude가 전부 처리</strong></p>
+          </div>
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">왜 Playwright를 선택했는가?</div>
+            <p style="font-size:var(--ts)">Claude가 URL을 보고 해당 사이트가 JavaScript로 렌더링된다는 것을 판단 → 일반 크롤러로는 빈값이 나오므로 Playwright를 자동 선택</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 11 Playwright 개념 ══ -->
+<section class="slide" id="s11">
+  <div class="sn">11</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 03 · Playwright란?</div>
+      <h2 class="rev">왜 일반 방법으론 안 되고 Playwright인가</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div class="card r">
+          <div style="font-size:var(--ts);color:var(--red);font-weight:700;margin-bottom:var(--ge)">❌ 일반 크롤러 (requests)</div>
+          <p style="font-size:var(--ts);margin-bottom:var(--ge)">서버에서 받은 HTML 파일만 읽어옴.<br>JavaScript는 실행하지 않음.</p>
+          <div class="term">
+            <div class="cm"># 삼삼엠투는 React 앱 → JS가 숫자를 그림</div>
+            <div class="d">방 개수: <span class="dn">0</span>  <span class="cm">← JS 미실행 상태</span></div>
+          </div>
+        </div>
+        <div class="card g">
+          <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:var(--ge)">✅ Playwright</div>
+          <p style="font-size:var(--ts);margin-bottom:var(--ge)">실제 Chrome 브라우저를 뒤에서 실행.<br>JS 렌더링이 완료된 후 데이터를 읽음.</p>
+          <div class="term">
+            <div class="cm"># JS 실행 완료 후 → 실제 숫자</div>
+            <div class="d">방 개수: <span class="up">4,872</span>  <span class="cm">← 정확한 값</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card rev" style="margin-top:var(--ge)">
+        <div style="display:flex;gap:var(--g);flex-wrap:wrap;align-items:flex-start">
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;margin-bottom:4px">Playwright가 할 수 있는 것</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <span class="badge bk">실제 브라우저 조종</span>
+              <span class="badge bk">로그인·클릭·스크롤</span>
+              <span class="badge bk">JS 렌더링 대기</span>
+              <span class="badge bk">팝업 처리</span>
+            </div>
+          </div>
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;margin-bottom:4px">오늘 사용하는 사이트</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <span class="badge bk">삼삼엠투 — React 앱</span>
+              <span class="badge bp">Google Play — JS 렌더링</span>
+              <span class="badge bg">iOS — API (Playwright 불필요)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 12 SECTION 04 헤더 — 서비스 계정 ══ -->
+<section class="slide sec" id="s12">
+  <div class="sn">12</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">STEP 04</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:560px">Google Sheets<br>서비스 계정 연결</h1>
+    <p class="rev" style="max-width:460px">Claude가 Google Sheets에 직접 데이터를 쓸 수 있도록<br>인증 열쇠(서비스 계정)를 연결합니다</p>
+    <div class="sec-num">04</div>
+  </div>
+</section>
+
+<!-- ══ 13 서비스 계정이란? ══ -->
+<section class="slide" id="s13">
+  <div class="sn">13</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 04 · 서비스 계정이란?</div>
+      <h2 class="rev">왜 서비스 계정이 필요한가</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:6px">🤖 서비스 계정 = 프로그램 전용 구글 계정</div>
+            <p style="font-size:var(--ts)">사람이 로그인하지 않아도<br>코드가 Google Sheets에 자동으로<br>데이터를 쓸 수 있게 해주는 열쇠</p>
+          </div>
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">✅ 이게 있으면</div>
+            <p style="font-size:var(--ts)">매일 새벽에 자동으로 실행되는 코드가<br>내 시트에 데이터를 쌓을 수 있음<br>(내가 컴퓨터 앞에 없어도)</p>
+          </div>
+          <div class="card r">
+            <div style="font-size:var(--ts);color:var(--red);font-weight:700;margin-bottom:6px">❌ 이게 없으면</div>
+            <p style="font-size:var(--ts)">코드가 "권한 없음" 오류 발생<br>Sheets에 아무것도 기록 불가</p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;letter-spacing:.08em;text-transform:uppercase">전체 연결 구조</div>
+          <div class="term">
+            <div class="nw">내 코드 (Claude가 작성)</div>
+            <div class="d">     ↓  service-account.json 사용</div>
+            <div class="bl">Google Sheets API</div>
+            <div class="d">     ↓  편집 권한 확인</div>
+            <div class="up">raw_supply_snapshots 탭에 기록</div>
+          </div>
+          <div class="card w">
+            <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:4px">⚠️ JSON 파일 = 열쇠</div>
+            <p style="font-size:var(--ts)">비밀번호와 동일합니다.<br>GitHub에 올리거나 공유하지 마세요.<br>작업 폴더 안에만 보관.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 14 서비스 계정 발급 + 폴더에 넣기 ══ -->
+<section class="slide" id="s14">
+  <div class="sn">14</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 04 · JSON 발급 & 배치</div>
+      <h2 class="rev">서비스 계정 만들고 폴더에 넣기</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="step"><div class="step-n">1</div><div class="step-t"><strong>Google Cloud Console 접속</strong><span><code>console.cloud.google.com</code> → 프로젝트 선택/생성</span></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-t"><strong>Sheets API 활성화</strong><span>API 및 서비스 → 라이브러리 → "Google Sheets API" → 사용 설정</span></div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-t"><strong>서비스 계정 생성</strong><span>IAM → 서비스 계정 → + 만들기 → 이름 입력 → 완료</span></div></div>
+          <div class="step"><div class="step-n">4</div><div class="step-t"><strong>JSON 키 다운로드</strong><span>서비스 계정 클릭 → 키 탭 → 키 추가 → JSON → 다운로드</span></div></div>
+          <div class="step"><div class="step-n">5</div><div class="step-t"><strong>작업 폴더에 파일 넣기</strong><span>다운로드한 <code>service-account.json</code>을 작업 폴더 최상단에 복사</span></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">✅ 파일 넣은 후 Claude에게</div>
+            <div style="background:rgba(74,108,247,.07);border:1px solid rgba(74,108,247,.18);border-radius:8px;padding:clamp(7px,.9vw,11px);font-size:var(--ts);color:var(--txt2);margin-top:4px">
+              service-account.json 파일을<br>
+              작업 폴더에 넣었어.<br>
+              이걸 사용해서 Google Sheets에<br>
+              연결해줘.
+            </div>
+          </div>
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">📧 서비스 계정 이메일 형태</div>
+            <div class="term" style="font-size:calc(var(--ts)*.85)">
+              <div class="up">이름@프로젝트ID</div>
+              <div class="up">.iam.gserviceaccount.com</div>
+            </div>
+            <p style="font-size:var(--ts);margin-top:6px">이 이메일을 다음 단계에서 사용</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 15 시트에 편집 권한 추가 ══ -->
+<section class="slide" id="s15">
+  <div class="sn">15</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item on">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">STEP 04 · 시트 권한</div>
+      <h2 class="rev">Google Sheets에 서비스 계정 편집 권한 추가</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="step"><div class="step-n">1</div><div class="step-t"><strong>아까 만든 Google Sheets 열기</strong><span></span></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-t"><strong>우측 상단 공유 버튼 클릭</strong><span></span></div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-t"><strong>서비스 계정 이메일 입력</strong><span><code>이름@프로젝트.iam.gserviceaccount.com</code></span></div></div>
+          <div class="step"><div class="step-n">4</div><div class="step-t"><strong>권한: 편집자 선택 → 완료</strong><span></span></div></div>
+          <div class="card" style="border-color:rgba(5,150,105,.25);background:rgba(5,150,105,.05);margin-top:var(--ge)">
+            <p style="font-size:var(--ts)">✅ <strong style="color:var(--txt)">체크포인트</strong> — JSON 파일 폴더에 있음 · 시트 공유 완료</p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:6px">🔐 왜 이 작업이 필요한가?</div>
+            <p style="font-size:var(--ts)">
+              Google Sheets는 기본적으로<br>아무나 수정할 수 없습니다.<br><br>
+              서비스 계정 이메일을 공유하면<br>
+              코드가 "이 계정으로 로그인"해서<br>
+              데이터를 쓸 수 있게 됩니다.<br><br>
+              마치 <strong style="color:var(--txt)">공유 문서에 로봇 계정을 초대</strong>하는 것과 같습니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 16 SECTION 05 헤더 — 실습 ① ══ -->
+<section class="slide sec" id="s16">
+  <div class="sn">16</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item on">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">실습 ①</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:560px">삼삼엠투<br>방 개수 수집</h1>
+    <p class="rev" style="max-width:460px">어떤 링크에서, 어떤 정보를, 얼마나 자주 가져올지<br>Claude에게 정확히 알려주는 방법을 실습합니다</p>
+    <div class="sec-num">05</div>
+  </div>
+</section>
+
+<!-- ══ 17 실습 1 Context 구성 ══ -->
+<section class="slide" id="s17">
+  <div class="sn">17</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item on">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">실습 ① · Context 구성</div>
+      <h2 class="rev">Claude에게 전달할 4가지 정보</h2>
+      <div style="display:flex;flex-direction:column;gap:var(--ge);margin-top:var(--ge)">
+        <div class="ctx-card rev">
+          <div class="ctx-num">1</div>
+          <div class="ctx-body">
+            <strong>수집할 링크</strong>
+            <span>
+              전국: <code>https://web.33m2.co.kr/guest/room</code><br>
+              서울: <code>https://web.33m2.co.kr/guest/room?keyword=서울</code>
+            </span>
+          </div>
+        </div>
+        <div class="ctx-card rev">
+          <div class="ctx-num g">2</div>
+          <div class="ctx-body">
+            <strong>그 정보가 어디에 있는지</strong>
+            <span>"방 목록 상단에 오피스텔·모텔, 아파트·빌라, 단독·투룸 등 타입별 카드가 있고, 각 카드에 개수 숫자가 표시돼 있어. 이 숫자들의 합계를 가져와줘."</span>
+          </div>
+        </div>
+        <div class="ctx-card rev">
+          <div class="ctx-num p">3</div>
+          <div class="ctx-body">
+            <strong>이 데이터가 매일 바뀌는 건지</strong>
+            <span>"이 숫자는 매일 달라져. 오늘 날짜와 함께 시트에 한 행씩 누적해서 추가해줘. 덮어쓰지 말고."</span>
+          </div>
+        </div>
+        <div class="ctx-card rev">
+          <div class="ctx-num w">4</div>
+          <div class="ctx-body">
+            <strong>어디에 저장할지 (링크 직접 붙여넣기)</strong>
+            <span>
+              "이 Google Sheets에 저장해줘 → <code>[스프레드시트 URL]</code><br>
+              탭 이름: <code>raw_supply_snapshots</code>"
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 18 실습 1 결과 ══ -->
+<section class="slide" id="s18">
+  <div class="sn">18</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item on">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">실습 ① · 결과</div>
+      <h2 class="rev">실행하면 시트에 이렇게 쌓입니다</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div>
+          <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--ge)">터미널 출력</div>
+          <div class="term">
+            <div class="d">$ <span class="b">python collect.py</span></div>
+            <div class="b"> </div>
+            <div class="d">[INFO] 삼삼엠투 전국 페이지 로딩...</div>
+            <div class="d">[INFO] JS 렌더링 대기 중...</div>
+            <div class="d">[INFO] 방 개수 파싱 완료</div>
+            <div class="b"> </div>
+            <div class="up">[OK] 전국: 4,872개</div>
+            <div class="up">[OK] 서울: 1,203개</div>
+            <div class="b"> </div>
+            <div class="up">✓ Sheets 저장 완료</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">📊 시트에 쌓이는 데이터</div>
+            <table class="cmp" style="font-size:calc(var(--ts)*.88)">
+              <thead><tr><th>date</th><th>region</th><th>count</th></tr></thead>
+              <tbody>
+                <tr><td>2026-06-03</td><td>nationwide</td><td>4,857</td></tr>
+                <tr><td>2026-06-04</td><td>nationwide</td><td>4,872</td></tr>
+                <tr><td>2026-06-04</td><td>seoul</td><td>1,203</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">📈 오류가 나면</div>
+            <p style="font-size:var(--ts)">오류 메시지 전체를 복사해서<br>Claude에게 붙여넣기 →<br>"이 오류 고쳐줘" 한 마디</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 19 SECTION 06 헤더 — 실습 ② ══ -->
+<section class="slide sec" id="s19">
+  <div class="sn">19</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item on">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">실습 ②</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:560px">앱 버전<br>자동 감지</h1>
+    <p class="rev" style="max-width:460px">iOS · Android 앱 버전이 바뀌면<br>자동으로 감지하고 시트에 기록합니다</p>
+    <div class="sec-num">06</div>
+  </div>
+</section>
+
+<!-- ══ 20 실습 2 Context 구성 ══ -->
+<section class="slide" id="s20">
+  <div class="sn">20</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item on">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">실습 ② · Context 구성</div>
+      <h2 class="rev">iOS / Android — Claude에게 전달할 정보</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div>
+          <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)"> iOS App Store</div>
+          <div style="display:flex;flex-direction:column;gap:var(--ge)">
+            <div class="ctx-card">
+              <div class="ctx-num">1</div>
+              <div class="ctx-body"><strong>수집 링크</strong><span>iTunes API (인증 불필요)<br><code>itunes.apple.com/lookup?id=앱ID&country=kr</code></span></div>
+            </div>
+            <div class="ctx-card">
+              <div class="ctx-num g">2</div>
+              <div class="ctx-body"><strong>정보 위치</strong><span>API가 JSON으로 응답함.<br>응답 안의 <code>version</code>, <code>currentVersionReleaseDate</code>, <code>releaseNotes</code> 필드</span></div>
+            </div>
+            <div class="ctx-card">
+              <div class="ctx-num p">3</div>
+              <div class="ctx-body"><strong>변경 여부 판단</strong><span>"어제 기록된 버전과 오늘 버전이 다르면 is_new_version=TRUE로 표시해줘"</span></div>
+            </div>
+            <div class="ctx-card">
+              <div class="ctx-num w">4</div>
+              <div class="ctx-body"><strong>저장 위치</strong><span><code>[스프레드시트 URL]</code><br>탭: <code>app_versions</code></span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:var(--ts);color:var(--purple);font-weight:700;margin-bottom:var(--ge)">🤖 Android Google Play</div>
+          <div style="display:flex;flex-direction:column;gap:var(--ge)">
+            <div class="ctx-card">
+              <div class="ctx-num">1</div>
+              <div class="ctx-body"><strong>수집 링크</strong><span><code>play.google.com/store/apps/details</code><br><code>?id=kr.co.33m2.android</code></span></div>
+            </div>
+            <div class="ctx-card">
+              <div class="ctx-num g">2</div>
+              <div class="ctx-body"><strong>정보 위치</strong><span>페이지 중간 "업데이트 날짜" 섹션에<br>버전 번호와 릴리즈 노트가 있어</span></div>
+            </div>
+            <div class="ctx-card">
+              <div class="ctx-num p">3</div>
+              <div class="ctx-body"><strong>변경 여부 판단</strong><span>iOS와 동일하게 전날과 비교해서<br>is_new_version 표시</span></div>
+            </div>
+            <div class="ctx-card">
+              <div class="ctx-num w">4</div>
+              <div class="ctx-body"><strong>저장 위치</strong><span>동일 시트, 탭: <code>app_versions</code></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 21 실습 2 결과 ══ -->
+<section class="slide" id="s21">
+  <div class="sn">21</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item on">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">실습 ② · 결과</div>
+      <h2 class="rev">버전 변경 감지 결과</h2>
+      <div class="gs rev" style="margin-top:var(--ge)">
+        <div>
+          <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--ge)">시트에 쌓이는 데이터</div>
+          <div class="term">
+            <div class="d">date      <span class="b">2026-06-04</span></div>
+            <div class="d">platform  <span class="b">ios</span></div>
+            <div class="d">version   <span class="up">3.2.1</span>  <span class="cm">← 어제: 3.2.0</span></div>
+            <div class="nw">is_new_version  TRUE</div>
+            <div class="nw">change: 3.2.0 → 3.2.1</div>
+            <div class="b"> </div>
+            <div class="d">date      <span class="b">2026-06-04</span></div>
+            <div class="d">platform  <span class="b">android</span></div>
+            <div class="d">version   <span class="b">3.2.1</span>  <span class="cm">← 변화 없음</span></div>
+            <div class="d">is_new_version  <span class="d">FALSE</span></div>
+          </div>
+          <div style="margin-top:var(--ge)">
+            <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;margin-bottom:4px">앱 ID / 패키지명 찾는 방법</div>
+            <div style="display:flex;gap:var(--ge);flex-wrap:wrap">
+              <div style="flex:1;min-width:120px"><span class="badge bg" style="margin-bottom:3px;display:inline-block"> iOS</span><p style="font-size:var(--ts)">App Store URL의 <code>id</code> 뒤 숫자</p></div>
+              <div style="flex:1;min-width:120px"><span class="badge bp" style="margin-bottom:3px;display:inline-block">🤖 Android</span><p style="font-size:var(--ts)">Play Store URL의 <code>id=</code> 뒤 값</p></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:6px">앱 설명 변경도 감지</div>
+            <p style="font-size:var(--ts)">"어제와 오늘 앱 설명 텍스트가 달라지면 is_description_changed=TRUE로 표시해줘" 라고 요청하면 됩니다</p>
+          </div>
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">✅ 체크포인트</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div class="chk"><span class="chk-ico">✅</span><div class="chk-t">실습 ① 시트에 방 개수 기록됨</div></div>
+              <div class="chk"><span class="chk-ico">✅</span><div class="chk-t">실습 ② 시트에 앱 버전 기록됨</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 22 SECTION 07 헤더 — 웹훅 알림 ══ -->
+<section class="slide sec" id="s22">
+  <div class="sn">22</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item on">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">마무리</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:560px">Google Chat으로<br>알림 받기</h1>
+    <p class="rev" style="max-width:460px">수집 결과를 매일 Google Chat으로 자동 전송합니다.<br>웹훅 URL 설정 방법을 알아봅니다.</p>
+    <div class="sec-num">07</div>
+  </div>
+</section>
+
+<!-- ══ 23 웹훅 세팅 ══ -->
+<section class="slide" id="s23">
+  <div class="sn">23</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item on">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">마무리 · 웹훅 설정</div>
+      <h2 class="rev">Google Chat 웹훅 URL 만들기</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="step"><div class="step-n">1</div><div class="step-t"><strong>알림 받을 Google Chat 스페이스 열기</strong><span>채팀 스페이스 또는 개인 알림용 스페이스 선택</span></div></div>
+          <div class="step"><div class="step-n">2</div><div class="step-t"><strong>앱 및 통합 메뉴 열기</strong><span>스페이스 이름 클릭 → 앱 및 통합 → 수신 웹훅</span></div></div>
+          <div class="step"><div class="step-n">3</div><div class="step-t"><strong>수신 웹훅 추가</strong><span>이름 입력 (예: "모니터링 봇") → 저장</span></div></div>
+          <div class="step"><div class="step-n">4</div><div class="step-t"><strong>URL 복사 → Claude에게 전달</strong><span>생성된 URL을 복사해서 .env에 저장하거나 Claude에게 직접 알려줌</span></div></div>
+          <div class="term" style="margin-top:var(--ge);font-size:calc(var(--ts)*.88)">
+            <div class="cm"># .env에 추가</div>
+            <div><span class="bl">GOOGLE_CHAT_WEBHOOK_URL</span>=</div>
+            <div class="up">https://chat.googleapis.com/v1/spaces/...</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:var(--ge)">Claude에게 이렇게 요청</div>
+            <div style="background:rgba(74,108,247,.07);border:1px solid rgba(74,108,247,.18);border-radius:8px;padding:clamp(7px,.9vw,11px);font-size:var(--ts);color:var(--txt2)">
+              .env의 GOOGLE_CHAT_WEBHOOK_URL로<br>
+              수집 결과 요약을 한국어로 정리해서<br>
+              Google Chat에 전송하는 함수를 만들어줘.<br><br>
+              방 개수 변화 + 앱 버전 변경 내용을<br>
+              포함해줘.
+            </div>
+          </div>
+          <div class="card w">
+            <div style="font-size:var(--ts);color:var(--warn);font-weight:700;margin-bottom:4px">⚠️ 웹훅 URL 보안</div>
+            <p style="font-size:var(--ts)">웹훅 URL은 비밀번호와 같습니다.<br><code>.env</code>에만 저장하고 코드에 직접 쓰지 마세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 24 완성된 리포트 미리보기 ══ -->
+<section class="slide" id="s24">
+  <div class="sn">24</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item on">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">마무리 · 완성</div>
+      <h2 class="rev">매일 오전 9시, 이런 메시지가 옵니다</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div>
+          <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--ge)">Google Chat 수신 메시지</div>
+          <div class="term">
+            <div class="nw">📊 Daily 경쟁사 모니터링 · 2026-06-04</div>
+            <div class="b"> </div>
+            <div class="bl">*[공개방 수]*</div>
+            <div>• 삼삼엠투 전국: <span class="up">4,872</span></div>
+            <div class="up">  ↳ 전일 +15 / 7일전 +42</div>
+            <div>• 삼삼엠투 서울: <span class="up">1,203</span></div>
+            <div class="up">  ↳ 전일 +3 / 7일전 +11</div>
+            <div class="b"> </div>
+            <div class="bl">*[앱 업데이트]*</div>
+            <div>• 삼삼엠투 <span class="nw">iOS</span> ⬆️</div>
+            <div class="nw">  3.2.0 → 3.2.1</div>
+            <div>• 삼삼엠투 Android: 변경 없음</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green);font-weight:700;margin-bottom:var(--ge)">✅ 전체 자동화 완성 구조</div>
+            <div style="display:flex;flex-direction:column;gap:var(--ge)">
+              <div class="pbox b">① Playwright 크롤링</div>
+              <div style="text-align:center;color:var(--txt3)">↓</div>
+              <div class="pbox g">② Google Sheets 저장</div>
+              <div style="text-align:center;color:var(--txt3)">↓</div>
+              <div class="pbox" style="border-color:rgba(74,108,247,.28);color:var(--accent);background:rgba(74,108,247,.06)">③ Google Chat 전송</div>
+            </div>
+          </div>
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--accent);font-weight:700;margin-bottom:4px">🔄 자동 실행 등록</div>
+            <p style="font-size:var(--ts)">Claude에게<br>"매일 오전 9시에 자동 실행되게<br>스케줄러 등록해줘"<br>라고 하면 완성</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 25 Q&A ══ -->
+<section class="slide" id="s25">
+  <div class="sn">25</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item on">알림</span>
+  </div>
+  <div class="slide-inner" style="justify-content:center;align-items:center;text-align:center">
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(55vw,480px);height:min(55vw,480px);background:radial-gradient(circle,rgba(74,108,247,.08) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="max-width:min(90vw,580px);position:relative">
+      <div class="lbl rev">감사합니다</div>
+      <h1 class="rev" style="margin:clamp(.25rem,1vh,.7rem) 0">Q &amp; A</h1>
+      <p class="rev">내 업무 중 자동화하고 싶은 크롤링이 있으신가요?<br>아이디어 공유 및 질문 받겠습니다.</p>
+      <hr class="rev" style="margin:var(--g) auto;max-width:280px">
+      <div class="g3 rev" style="max-width:460px;margin:0 auto">
+        <div class="card" style="text-align:center">
+          <div style="font-size:var(--ts);color:var(--txt3);margin-bottom:4px">두뇌</div>
+          <div style="font-size:var(--ts);font-weight:700">Claude Code</div>
+          <div style="font-size:var(--tl);color:var(--txt3)">코드 작성·수정</div>
+        </div>
+        <div class="card b" style="text-align:center">
+          <div style="font-size:var(--ts);color:var(--txt3);margin-bottom:4px">손가락</div>
+          <div style="font-size:var(--ts);font-weight:700">Playwright</div>
+          <div style="font-size:var(--tl);color:var(--txt3)">브라우저 조종</div>
+        </div>
+        <div class="card g" style="text-align:center">
+          <div style="font-size:var(--ts);color:var(--txt3);margin-bottom:4px">결과</div>
+          <div style="font-size:var(--ts);font-weight:700">Sheets + Chat</div>
+          <div style="font-size:var(--tl);color:var(--txt3)">자동 기록·알림</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+class SlidePresentation {
+  constructor() {
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.total  = this.slides.length;
+    this.cur    = 0;
+    this.prog   = document.getElementById('prog');
+    this.dotsEl = document.getElementById('dots');
+    this.touchY = 0; this.touchX = 0;
+    this._setupDots(); this._setupObserver();
+    this._setupKeys(); this._setupTouch(); this._setupWheel();
+    this._updateProgress(0);
+  }
+  _setupDots() {
+    this.dotsEl.innerHTML = '';
+    this.slides.forEach((_,i) => {
+      const b = document.createElement('button');
+      b.className = 'nd'+(i===0?' on':'');
+      b.setAttribute('aria-label',`슬라이드 ${i+1}`);
+      b.addEventListener('click',()=>this.goto(i));
+      this.dotsEl.appendChild(b);
+    });
+  }
+  _setupObserver() {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if(e.isIntersecting) {
+          e.target.classList.add('vis');
+          const i=this.slides.indexOf(e.target);
+          if(i!==-1){this.cur=i;this._updateProgress(i);this._updateDots(i);}
+        }
+      });
+    },{threshold:0.5});
+    this.slides.forEach(s=>obs.observe(s));
+  }
+  _setupKeys() {
+    document.addEventListener('keydown',e=>{
+      if(['ArrowDown','ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();this.next();}
+      else if(['ArrowUp','ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();this.prev();}
+      else if(e.key==='Home'){e.preventDefault();this.goto(0);}
+      else if(e.key==='End'){e.preventDefault();this.goto(this.total-1);}
+    });
+  }
+  _setupTouch() {
+    document.addEventListener('touchstart',e=>{this.touchY=e.touches[0].clientY;this.touchX=e.touches[0].clientX;},{passive:true});
+    document.addEventListener('touchend',e=>{
+      const dy=this.touchY-e.changedTouches[0].clientY;
+      const dx=this.touchX-e.changedTouches[0].clientX;
+      if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>50){dy>0?this.next():this.prev();}
+    },{passive:true});
+  }
+  _setupWheel() {
+    let t;
+    document.addEventListener('wheel',e=>{
+      e.preventDefault();clearTimeout(t);
+      t=setTimeout(()=>{e.deltaY>0?this.next():this.prev();},50);
+    },{passive:false});
+  }
+  next(){if(this.cur<this.total-1)this.goto(this.cur+1);}
+  prev(){if(this.cur>0)this.goto(this.cur-1);}
+  goto(i){if(i>=0&&i<this.total)this.slides[i].scrollIntoView({behavior:'smooth'});}
+  _updateProgress(i){this.prog.style.width=(this.total>1?(i/(this.total-1))*100:100)+'%';}
+  _updateDots(a){this.dotsEl.querySelectorAll('.nd').forEach((d,i)=>d.classList.toggle('on',i===a));}
+}
+new SlidePresentation();
+</script>
+</body>
+</html>

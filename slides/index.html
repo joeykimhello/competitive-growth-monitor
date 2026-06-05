@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpaceV 교육 자료</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    background: #f5f7ff;
+    color: #111827;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 3rem 1.5rem;
+  }
+  .logo {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
+  h1 {
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    color: #111827;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 1rem;
+    color: #6b7280;
+    text-align: center;
+  }
+  .cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    justify-content: center;
+    max-width: 800px;
+    width: 100%;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #e0e6f0;
+    border-radius: 16px;
+    padding: 2rem 2rem 1.75rem;
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 1px 4px rgba(74,108,247,.08), 0 0 0 1px rgba(74,108,247,.06);
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(74,108,247,.15), 0 0 0 1px rgba(74,108,247,.1);
+  }
+  .card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .25rem .6rem;
+    border-radius: 6px;
+    width: fit-content;
+  }
+  .tag-blue { background: #eff2ff; color: #4A6CF7; }
+  .tag-green { background: #ecfdf5; color: #059669; }
+  .card h2 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+  .card p {
+    font-size: .9rem;
+    color: #4b5563;
+    line-height: 1.6;
+    flex: 1;
+  }
+  .card-footer {
+    font-size: .8rem;
+    color: #9ca3af;
+    padding-top: .5rem;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .arrow {
+    font-size: 1rem;
+    color: #4A6CF7;
+  }
+  footer {
+    font-size: .8rem;
+    color: #d1d5db;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <span class="logo">SpaceV</span>
+  <h1>AI 업무 자동화 교육 자료</h1>
+  <p class="subtitle">클릭하면 슬라이드가 열립니다</p>
+
+  <div class="cards">
+    <a class="card" href="install-guide/index.html">
+      <span class="card-tag tag-green">사전 준비</span>
+      <h2>Claude Code<br>설치 가이드</h2>
+      <p>Windows/Mac 환경에서 Claude Code를 설치하고 첫 실행까지 완료하는 단계별 가이드</p>
+      <div class="card-footer">
+        <span>설치 · 환경 설정</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <a class="card" href="crawling-workshop/index.html">
+      <span class="card-tag tag-blue">워크샵</span>
+      <h2>매일 하는 크롤링<br>AI로 없애기</h2>
+      <p>Claude Code + Playwright로 경쟁사 방 개수·앱 버전을 자동 수집하고 Google Chat으로 알림 받기</p>
+      <div class="card-footer">
+        <span>실습 · 자동화</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+  </div>
+
+  <footer>SpaceV · 2026</footer>
+</body>
+</html>
