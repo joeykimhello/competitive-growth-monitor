@@ -263,11 +263,13 @@ hr{border:none;border-top:1px solid var(--border)}
 <div id="prog"></div>
 <nav id="dots"></nav>
 
+
 <!-- ══ 01 COVER ══ -->
 <section class="slide" id="s01">
   <div class="sn">01</div>
   <div class="bc">
     <span class="bc-item on">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -303,6 +305,7 @@ hr{border:none;border-top:1px solid var(--border)}
   <div class="sn">02</div>
   <div class="bc">
     <span class="bc-item on">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -316,39 +319,44 @@ hr{border:none;border-top:1px solid var(--border)}
       <h2 class="rev">이 순서대로 진행합니다</h2>
       <div class="rev" style="margin-top:var(--ge)">
         <div style="display:flex;flex-direction:column;gap:var(--ge)">
-          <div style="display:flex;gap:var(--g);align-items:stretch;flex-wrap:wrap">
-            <div class="card b" style="flex:1;min-width:140px">
-              <div class="lbl" style="font-size:calc(var(--tl)*.9);margin-bottom:3px">STEP 01</div>
+          <div style="display:flex;gap:var(--ge);align-items:stretch;flex-wrap:wrap">
+            <div class="card b" style="flex:1;min-width:120px">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);margin-bottom:3px">개념</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">크롤링 · API<br>Playwright</div>
+            </div>
+            <span class="parr" style="align-self:center">→</span>
+            <div class="card" style="flex:1;min-width:120px;border-color:rgba(0,230,118,.35);background:rgba(0,230,118,.06)">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green-t);margin-bottom:3px">STEP 01</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Claude 데스크탑 설치</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
-            <div class="card" style="flex:1;min-width:140px;border-color:rgba(0,230,118,.35);background:rgba(0,230,118,.06)">
-              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green-t);margin-bottom:3px">STEP 02</div>
-              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">작업 폴더 + Google Sheets 생성</div>
+            <div class="card" style="flex:1;min-width:120px;border-color:rgba(0,0,0,.18);background:rgba(0,0,0,.04)">
+              <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--txt2);margin-bottom:3px">STEP 02</div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">폴더 + Google Sheets</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
-            <div class="card" style="flex:1;min-width:140px;border-color:rgba(0,0,0,.18);background:rgba(0,0,0,.04)">
+            <div class="card w" style="flex:1;min-width:120px">
               <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--txt2);margin-bottom:3px">STEP 03</div>
-              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Claude에게 첫 요청<br><span style="font-weight:400;color:var(--txt2)">(Playwright 자동 설치)</span></div>
+              <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Claude에게<br>첫 요청</div>
             </div>
           </div>
-          <div style="display:flex;gap:var(--g);align-items:stretch;flex-wrap:wrap">
-            <div class="card w" style="flex:1;min-width:140px">
+          <div style="display:flex;gap:var(--ge);align-items:stretch;flex-wrap:wrap">
+            <div class="card w" style="flex:1;min-width:120px">
               <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--txt2);margin-bottom:3px">STEP 04</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">서비스 계정 연결</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
-            <div class="card b" style="flex:1;min-width:140px">
+            <div class="card b" style="flex:1;min-width:120px">
               <div class="lbl" style="font-size:calc(var(--tl)*.9);margin-bottom:3px">실습 ①</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">삼삼엠투 방 개수</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
-            <div class="card p" style="flex:1;min-width:140px">
+            <div class="card p" style="flex:1;min-width:120px">
               <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--txt2);margin-bottom:3px">실습 ②</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">앱 버전 감지</div>
             </div>
             <span class="parr" style="align-self:center">→</span>
-            <div class="card g" style="flex:1;min-width:140px">
+            <div class="card g" style="flex:1;min-width:120px">
               <div class="lbl" style="font-size:calc(var(--tl)*.9);color:var(--green-t);margin-bottom:3px">마무리</div>
               <div style="font-size:var(--ts);font-weight:700;color:var(--txt)">Google Chat 알림</div>
             </div>
@@ -356,17 +364,271 @@ hr{border:none;border-top:1px solid var(--border)}
         </div>
       </div>
       <div class="card rev" style="margin-top:var(--ge)">
-        <p style="font-size:var(--tb)">🎯 <strong style="color:var(--txt)">오늘 끝나면</strong> — 반복 크롤링이 매일 자동으로 수집되고 <span style="color:var(--green-t);font-weight:600">Google Chat으로 결과가 도착</span>합니다</p>
+        <p style="font-size:var(--tb)">🎯 <strong style="color:var(--txt)">오늘 끝나면</strong> — 크롤링이 매일 자동으로 실행되고 <span style="color:var(--green-t);font-weight:600">Google Chat으로 결과가 도착</span>합니다</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ 03 SECTION 01 헤더 — Claude 설치 ══ -->
+<!-- ══ 03 개념 섹션 헤더 ══ -->
 <section class="slide sec" id="s03">
   <div class="sn">03</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item on">개념</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="sec-cover">
+    <div class="lbl rev">개념</div>
+    <h1 class="rev" style="margin:clamp(.3rem,1vh,.8rem) 0;max-width:560px">크롤링,<br>API, Playwright</h1>
+    <p class="rev" style="max-width:460px">데이터를 어떻게 가져오는지,<br>언제 크롤링을 쓰고 언제 API를 쓰는지<br>먼저 이해하고 실습으로 들어갑니다.</p>
+    <div class="sec-num">개념</div>
+  </div>
+</section>
+
+<!-- ══ 04 크롤링이란? ══ -->
+<section class="slide" id="s04">
+  <div class="sn">04</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item on">개념</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">개념 · 크롤링이란?</div>
+      <h2 class="rev">크롤링 = 웹사이트에서 데이터를 자동으로 가져오는 것</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">📋 크롤링이란?</div>
+            <p style="font-size:var(--ts);margin-bottom:var(--ge)">
+              사람이 브라우저로 사이트에 접속해서<br>
+              숫자나 텍스트를 눈으로 확인하는 과정을<br>
+              <strong style="color:var(--txt)">코드가 대신 자동으로 하는 것</strong>입니다.
+            </p>
+            <div class="term">
+              <div class="cm"># 사람이 매일 하는 것</div>
+              <div class="d">브라우저 열기 → 사이트 접속 → 숫자 확인</div>
+              <div class="b"> </div>
+              <div class="cm"># 크롤링이 대신 하는 것</div>
+              <div class="up">위 과정을 코드가 자동으로 반복</div>
+            </div>
+          </div>
+          <div class="card w">
+            <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:6px">💡 활용 예시</div>
+            <div style="display:flex;flex-direction:column;gap:4px;font-size:var(--ts);color:var(--txt2);line-height:1.6">
+              <div>• 경쟁사 공개방 개수 — 매일 자동 수집</div>
+              <div>• 앱 버전 변경 — 업데이트 즉시 감지</div>
+              <div>• 가격 · 리뷰 · 공지사항 모니터링</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">🔄 자동화하면 이렇게 됩니다</div>
+            <div style="display:flex;flex-direction:column;gap:var(--ge)">
+              <div class="step"><div class="step-n" style="background:var(--accent);color:#0a0a0a">1</div><div class="step-t"><strong>매일 같은 사이트를 열 필요 없음</strong><span>코드가 접속하고 데이터를 가져옴</span></div></div>
+              <div class="step"><div class="step-n" style="background:var(--accent);color:#0a0a0a">2</div><div class="step-t"><strong>결과가 자동으로 시트에 쌓임</strong><span>날짜별 누적 → 트렌드 파악 가능</span></div></div>
+              <div class="step"><div class="step-n" style="background:var(--accent);color:#0a0a0a">3</div><div class="step-t"><strong>변화가 생기면 즉시 알림</strong><span>Google Chat으로 자동 전송</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 언제 Playwright를 써야 하는가 ══ -->
+<section class="slide" id="s05">
+  <div class="sn">05</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item on">개념</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">개념 · 크롤링 vs API</div>
+      <h2 class="rev">크롤링 vs API — 언제 각각 써야 하는가</h2>
+      <p class="rev" style="color:var(--txt2)">API가 있으면 API가 정답입니다. 크롤링은 API가 없을 때 쓰는 방법입니다.</p>
+      <div class="g3 rev" style="margin-top:var(--ge)">
+        <div class="card g" style="position:relative">
+          <div style="position:absolute;top:var(--ge);right:var(--ge)"><span class="badge bk">1순위</span></div>
+          <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">✅ 공개 API 사용</div>
+          <p style="font-size:var(--ts);margin-bottom:var(--ge)">서비스가 공식 API를 제공하면<br>JSON을 직접 받아옴.<br>가장 안정적, 서버 부담 없음.</p>
+          <div class="term" style="font-size:calc(var(--ts)*.85)">
+            <div class="cm"># 예: iOS App Store</div>
+            <div class="up">itunes.apple.com/lookup</div>
+            <div class="d">→ JSON 응답 즉시 파싱</div>
+          </div>
+        </div>
+        <div class="card" style="position:relative;border-color:rgba(0,0,0,.18)">
+          <div style="position:absolute;top:var(--ge);right:var(--ge)"><span class="badge bg">2순위</span></div>
+          <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:var(--ge)">🔵 requests 사용</div>
+          <p style="font-size:var(--ts);margin-bottom:var(--ge)">API는 없지만 HTML에<br>데이터가 그대로 있을 때.<br>가볍고 빠름.</p>
+          <div class="term" style="font-size:calc(var(--ts)*.85)">
+            <div class="cm"># 정적 HTML 사이트</div>
+            <div class="up">requests.get(url)</div>
+            <div class="d">→ BeautifulSoup 파싱</div>
+          </div>
+        </div>
+        <div class="card r" style="position:relative">
+          <div style="position:absolute;top:var(--ge);right:var(--ge)"><span class="badge br">마지막 수단</span></div>
+          <div style="font-size:var(--ts);color:var(--err);font-weight:700;margin-bottom:var(--ge)">⚡ Playwright 사용</div>
+          <p style="font-size:var(--ts);margin-bottom:var(--ge)">JS가 데이터를 그리는<br>React/Vue 앱.<br>API도 없고 정적 HTML도 아닐 때만.</p>
+          <div class="term" style="font-size:calc(var(--ts)*.85)">
+            <div class="cm"># 예: 삼삼엠투, Google Play</div>
+            <div class="up">browser.launch()</div>
+            <div class="d">→ JS 실행 후 파싱</div>
+          </div>
+        </div>
+      </div>
+      <div class="card rev" style="margin-top:var(--ge)">
+        <p style="font-size:var(--tb)">💡 <strong style="color:var(--txt)">Claude가 판단합니다</strong> — URL만 알려주면 Claude가 어떤 방법이 맞는지 자동으로 선택해줍니다</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 크롤링 주의사항 ══ -->
+<section class="slide" id="s06">
+  <div class="sn">06</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item on">개념</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">개념 · 크롤링 원칙</div>
+      <h2 class="rev">크롤링하기 전, 반드시 확인하세요</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card r">
+            <div style="font-size:var(--ts);color:var(--err);font-weight:700;margin-bottom:6px">⛔ 이건 하면 안 됩니다</div>
+            <div style="display:flex;flex-direction:column;gap:4px;font-size:var(--ts);color:var(--txt2);line-height:1.6">
+              <div>• 로그인해야만 보이는 회원 전용 데이터 수집</div>
+              <div>• 개인정보 (이름·연락처·주소) 수집·저장</div>
+              <div>• 짧은 간격으로 반복 요청해 서버 과부하 유발</div>
+              <div>• 이용약관에서 크롤링을 명시 금지한 사이트</div>
+              <div>• 수집 데이터를 외부 배포·상업적 활용</div>
+            </div>
+          </div>
+          <div class="card g">
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">✅ 우리가 하는 것</div>
+            <div style="display:flex;flex-direction:column;gap:4px;font-size:var(--ts);color:var(--txt2);line-height:1.6">
+              <div>• 비로그인 공개 페이지의 통계 숫자만 수집</div>
+              <div>• 하루 1회 실행, 서버 부담 최소화</div>
+              <div>• 방 개수·앱 버전 등 집계 데이터만 내부 활용</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--ge)">
+          <div class="card b">
+            <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:6px">📋 robots.txt 확인</div>
+            <p style="font-size:var(--ts);margin-bottom:var(--ge)">사이트의 크롤링 허용 여부는<br><code>사이트주소/robots.txt</code>에서 확인합니다.</p>
+            <div class="term" style="font-size:calc(var(--ts)*.85)">
+              <div class="dn">Disallow: /   → 크롤링 차단</div>
+              <div class="up">Allow: /guest/ → 공개 허용</div>
+            </div>
+          </div>
+          <div class="card w">
+            <div style="font-size:var(--ts);color:var(--txt2);font-weight:700;margin-bottom:4px">⏱️ 요청 간격 원칙</div>
+            <p style="font-size:var(--ts)">요청 사이에 <strong style="color:var(--txt)">1~3초 딜레이</strong>를 넣으세요.<br>빠를수록 IP 차단 위험이 높아집니다.<br><br>Claude에게 <strong style="color:var(--txt)">"요청 사이에 2초 기다려줘"</strong>라고 하면 됩니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 Playwright 개념 ══ -->
+<section class="slide" id="s07">
+  <div class="sn">07</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item on">개념</span>
+    <span class="bc-item">설치</span>
+    <span class="bc-item">준비</span>
+    <span class="bc-item">서비스계정</span>
+    <span class="bc-item">실습①</span>
+    <span class="bc-item">실습②</span>
+    <span class="bc-item">알림</span>
+  </div>
+  <div class="slide-inner">
+    <div class="content">
+      <div class="lbl rev">개념 · Playwright란?</div>
+      <h2 class="rev">왜 일반 방법으론 안 되고 Playwright인가</h2>
+      <div class="g2b rev" style="margin-top:var(--ge)">
+        <div class="card r">
+          <div style="font-size:var(--ts);color:var(--err);font-weight:700;margin-bottom:var(--ge)">❌ 일반 크롤러 (requests)</div>
+          <p style="font-size:var(--ts);margin-bottom:var(--ge)">서버에서 받은 HTML 파일만 읽어옴.<br>JavaScript는 실행하지 않음.</p>
+          <div class="term">
+            <div class="cm"># 삼삼엠투는 React 앱 → JS가 숫자를 그림</div>
+            <div class="d">방 개수: <span class="dn">0</span>  <span class="cm">← JS 미실행 상태</span></div>
+          </div>
+        </div>
+        <div class="card g">
+          <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">✅ Playwright</div>
+          <p style="font-size:var(--ts);margin-bottom:var(--ge)">실제 Chrome 브라우저를 뒤에서 실행.<br>JS 렌더링이 완료된 후 데이터를 읽음.</p>
+          <div class="term">
+            <div class="cm"># JS 실행 완료 후 → 실제 숫자</div>
+            <div class="d">방 개수: <span class="up">4,872</span>  <span class="cm">← 정확한 값</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card rev" style="margin-top:var(--ge)">
+        <div style="display:flex;gap:var(--g);flex-wrap:wrap;align-items:flex-start">
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;margin-bottom:4px">Playwright가 할 수 있는 것</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <span class="badge bk">실제 브라우저 조종</span>
+              <span class="badge bk">로그인·클릭·스크롤</span>
+              <span class="badge bk">JS 렌더링 대기</span>
+              <span class="badge bk">팝업 처리</span>
+            </div>
+          </div>
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;margin-bottom:4px">오늘 사용하는 사이트</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <span class="badge bk">삼삼엠투 — React 앱</span>
+              <span class="badge bp">Google Play — JS 렌더링</span>
+              <span class="badge bg">iOS — API (Playwright 불필요)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 08 SECTION 01 헤더 — Claude 설치 ══ -->
+<section class="slide sec" id="s08">
+  <div class="sn">08</div>
+  <div class="bc">
+    <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item on">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -382,11 +644,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 04 Claude 설치 방법 ══ -->
-<section class="slide" id="s04">
-  <div class="sn">04</div>
+<!-- ══ 09 Claude 설치 방법 ══ -->
+<section class="slide" id="s09">
+  <div class="sn">09</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item on">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -421,11 +684,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 05 SECTION 02 헤더 — 폴더 + 시트 준비 ══ -->
-<section class="slide sec" id="s05">
-  <div class="sn">05</div>
+<!-- ══ 10 SECTION 02 헤더 — 폴더 + 시트 준비 ══ -->
+<section class="slide sec" id="s10">
+  <div class="sn">10</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item on">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -441,11 +705,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 06 폴더 생성 ══ -->
-<section class="slide" id="s06">
-  <div class="sn">06</div>
+<!-- ══ 11 폴더 생성 ══ -->
+<section class="slide" id="s11">
+  <div class="sn">11</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item on">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -488,11 +753,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 07 Google Sheets 생성 ══ -->
-<section class="slide" id="s07">
-  <div class="sn">07</div>
+<!-- ══ 12 Google Sheets 생성 ══ -->
+<section class="slide" id="s12">
+  <div class="sn">12</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item on">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -537,11 +803,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 08 SECTION 03 헤더 — Claude 첫 요청 ══ -->
-<section class="slide sec" id="s08">
-  <div class="sn">08</div>
+<!-- ══ 13 SECTION 03 헤더 — Claude 첫 요청 ══ -->
+<section class="slide sec" id="s13">
+  <div class="sn">13</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item on">서비스계정</span>
@@ -557,11 +824,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 09 자연어 요청법 — Context 4가지 ══ -->
-<section class="slide" id="s09">
-  <div class="sn">09</div>
+<!-- ══ 14 자연어 요청법 — Context 4가지 ══ -->
+<section class="slide" id="s14">
+  <div class="sn">14</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item on">서비스계정</span>
@@ -608,11 +876,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 10 Playwright 자동 설치 ══ -->
-<section class="slide" id="s10">
-  <div class="sn">10</div>
+<!-- ══ 15 Playwright 자동 설치 ══ -->
+<section class="slide" id="s15">
+  <div class="sn">15</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item on">서비스계정</span>
@@ -656,70 +925,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 11 Playwright 개념 ══ -->
-<section class="slide" id="s11">
-  <div class="sn">11</div>
+<!-- ══ 16 SECTION 04 헤더 — 서비스 계정 ══ -->
+<section class="slide sec" id="s16">
+  <div class="sn">16</div>
   <div class="bc">
     <span class="bc-item">소개</span>
-    <span class="bc-item">설치</span>
-    <span class="bc-item">준비</span>
-    <span class="bc-item on">서비스계정</span>
-    <span class="bc-item">실습①</span>
-    <span class="bc-item">실습②</span>
-    <span class="bc-item">알림</span>
-  </div>
-  <div class="slide-inner">
-    <div class="content">
-      <div class="lbl rev">STEP 03 · Playwright란?</div>
-      <h2 class="rev">왜 일반 방법으론 안 되고 Playwright인가</h2>
-      <div class="g2b rev" style="margin-top:var(--ge)">
-        <div class="card r">
-          <div style="font-size:var(--ts);color:var(--err);font-weight:700;margin-bottom:var(--ge)">❌ 일반 크롤러 (requests)</div>
-          <p style="font-size:var(--ts);margin-bottom:var(--ge)">서버에서 받은 HTML 파일만 읽어옴.<br>JavaScript는 실행하지 않음.</p>
-          <div class="term">
-            <div class="cm"># 삼삼엠투는 React 앱 → JS가 숫자를 그림</div>
-            <div class="d">방 개수: <span class="dn">0</span>  <span class="cm">← JS 미실행 상태</span></div>
-          </div>
-        </div>
-        <div class="card g">
-          <div style="font-size:var(--ts);color:var(--green-t);font-weight:700;margin-bottom:var(--ge)">✅ Playwright</div>
-          <p style="font-size:var(--ts);margin-bottom:var(--ge)">실제 Chrome 브라우저를 뒤에서 실행.<br>JS 렌더링이 완료된 후 데이터를 읽음.</p>
-          <div class="term">
-            <div class="cm"># JS 실행 완료 후 → 실제 숫자</div>
-            <div class="d">방 개수: <span class="up">4,872</span>  <span class="cm">← 정확한 값</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="card rev" style="margin-top:var(--ge)">
-        <div style="display:flex;gap:var(--g);flex-wrap:wrap;align-items:flex-start">
-          <div style="flex:1;min-width:160px">
-            <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;margin-bottom:4px">Playwright가 할 수 있는 것</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-              <span class="badge bk">실제 브라우저 조종</span>
-              <span class="badge bk">로그인·클릭·스크롤</span>
-              <span class="badge bk">JS 렌더링 대기</span>
-              <span class="badge bk">팝업 처리</span>
-            </div>
-          </div>
-          <div style="flex:1;min-width:160px">
-            <div style="font-size:var(--ts);color:var(--txt3);font-weight:700;margin-bottom:4px">오늘 사용하는 사이트</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-              <span class="badge bk">삼삼엠투 — React 앱</span>
-              <span class="badge bp">Google Play — JS 렌더링</span>
-              <span class="badge bg">iOS — API (Playwright 불필요)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ 12 SECTION 04 헤더 — 서비스 계정 ══ -->
-<section class="slide sec" id="s12">
-  <div class="sn">12</div>
-  <div class="bc">
-    <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item on">서비스계정</span>
@@ -735,11 +946,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 13 서비스 계정이란? ══ -->
-<section class="slide" id="s13">
-  <div class="sn">13</div>
+<!-- ══ 17 서비스 계정이란? ══ -->
+<section class="slide" id="s17">
+  <div class="sn">17</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item on">서비스계정</span>
@@ -785,11 +997,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 14 서비스 계정 발급 + 폴더에 넣기 ══ -->
-<section class="slide" id="s14">
-  <div class="sn">14</div>
+<!-- ══ 18 서비스 계정 발급 + 폴더에 넣기 ══ -->
+<section class="slide" id="s18">
+  <div class="sn">18</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item on">서비스계정</span>
@@ -833,11 +1046,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 15 시트에 편집 권한 추가 ══ -->
-<section class="slide" id="s15">
-  <div class="sn">15</div>
+<!-- ══ 19 시트에 편집 권한 추가 ══ -->
+<section class="slide" id="s19">
+  <div class="sn">19</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item on">서비스계정</span>
@@ -876,11 +1090,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 16 SECTION 05 헤더 — 실습 ① ══ -->
-<section class="slide sec" id="s16">
-  <div class="sn">16</div>
+<!-- ══ 20 SECTION 05 헤더 — 실습 ① ══ -->
+<section class="slide sec" id="s20">
+  <div class="sn">20</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -896,11 +1111,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 17 실습 1 Context 구성 ══ -->
-<section class="slide" id="s17">
-  <div class="sn">17</div>
+<!-- ══ 21 실습 1 Context 구성 ══ -->
+<section class="slide" id="s21">
+  <div class="sn">21</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -952,11 +1168,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 18 실습 1 결과 ══ -->
-<section class="slide" id="s18">
-  <div class="sn">18</div>
+<!-- ══ 22 실습 1 결과 ══ -->
+<section class="slide" id="s22">
+  <div class="sn">22</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1006,11 +1223,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 19 SECTION 06 헤더 — 실습 ② ══ -->
-<section class="slide sec" id="s19">
-  <div class="sn">19</div>
+<!-- ══ 23 SECTION 06 헤더 — 실습 ② ══ -->
+<section class="slide sec" id="s23">
+  <div class="sn">23</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1026,11 +1244,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 20 실습 2 Context 구성 ══ -->
-<section class="slide" id="s20">
-  <div class="sn">20</div>
+<!-- ══ 24 실습 2 Context 구성 ══ -->
+<section class="slide" id="s24">
+  <div class="sn">24</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1090,11 +1309,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 21 실습 2 결과 ══ -->
-<section class="slide" id="s21">
-  <div class="sn">21</div>
+<!-- ══ 25 실습 2 결과 ══ -->
+<section class="slide" id="s25">
+  <div class="sn">25</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1147,11 +1367,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 22 SECTION 07 헤더 — 웹훅 알림 ══ -->
-<section class="slide sec" id="s22">
-  <div class="sn">22</div>
+<!-- ══ 26 SECTION 07 헤더 — 웹훅 알림 ══ -->
+<section class="slide sec" id="s26">
+  <div class="sn">26</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1167,11 +1388,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 23 웹훅 세팅 ══ -->
-<section class="slide" id="s23">
-  <div class="sn">23</div>
+<!-- ══ 27 웹훅 세팅 ══ -->
+<section class="slide" id="s27">
+  <div class="sn">27</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1216,11 +1438,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 24 완성된 리포트 미리보기 ══ -->
-<section class="slide" id="s24">
-  <div class="sn">24</div>
+<!-- ══ 28 완성된 리포트 미리보기 ══ -->
+<section class="slide" id="s28">
+  <div class="sn">28</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1271,11 +1494,12 @@ hr{border:none;border-top:1px solid var(--border)}
   </div>
 </section>
 
-<!-- ══ 25 Q&A ══ -->
-<section class="slide" id="s25">
-  <div class="sn">25</div>
+<!-- ══ 29 Q&A ══ -->
+<section class="slide" id="s29">
+  <div class="sn">29</div>
   <div class="bc">
     <span class="bc-item">소개</span>
+    <span class="bc-item">개념</span>
     <span class="bc-item">설치</span>
     <span class="bc-item">준비</span>
     <span class="bc-item">서비스계정</span>
@@ -1310,6 +1534,7 @@ hr{border:none;border-top:1px solid var(--border)}
     </div>
   </div>
 </section>
+
 
 <script>
 class SlidePresentation {
